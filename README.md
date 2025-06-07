@@ -15,7 +15,7 @@ HTMLNotes is a lightweight, web-based note-taking application built with HTML, C
 
 ## Demo
 
-A live demo is available on GitHub Pages: [https://nellowtcs.github.io/HTMLNotes/](https://nellowtcs.github.io/HTMLNotes/)
+A live demo is available on GitHub Pages: [https://htmltoolkit.github.io/HTMLNotes/](https://htmltoolkit.github.io/HTMLNotes/)
 
 Open the demo in your browser or download the latest release for better offline usage.
 
@@ -32,7 +32,7 @@ To run or modify HTMLNotes locally, follow these steps:
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/NellowTCS/HTMLNotes.git
+   git clone https://github.com/HTMLToolkit/HTMLNotes.git
    ```
 
 2. **Navigate to the Project Directory**:
