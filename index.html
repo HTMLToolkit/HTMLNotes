@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +7,6 @@
     <link rel="shortcut icon" type="image/x-icon" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
     <link rel="manifest" href="manifest.json">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -29,8 +27,7 @@
             --success-color: rgba(40, 167, 69, 0.8);
         }
 
-        body,
-        html {
+        body, html {
             margin: 0;
             padding: 0;
             height: 100%;
@@ -49,7 +46,6 @@
             padding: 8px 0;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 250px;
             background: var(--primary-bg);
@@ -63,6 +59,7 @@
             border-bottom-right-radius: 12px;
             margin: 8px 0 8px 0;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: width 0.3s ease;
         }
 
         .sidebar-title {
@@ -71,7 +68,6 @@
         }
 
         .sidebar-title h1 {
-            background-color: var(--primary-bg);
             font-size: 1.8rem;
             font-weight: 700;
             background-image: var(--accent-gradient);
@@ -81,19 +77,29 @@
         }
 
         .sidebar-toggle {
-            display: none;
+            display: block;
             padding: 10px;
-            background: var(--primary-bg);
-            color: var(--text-color);
+            background: var(--accent-gradient);
+            color: white;
             border: none;
             cursor: pointer;
             font-size: 0.9rem;
             text-align: center;
+            margin: 8px;
+            border-radius: 6px;
         }
 
         .sidebar.collapsed {
-            max-height: 50px;
+            width: 60px;
             overflow: hidden;
+        }
+
+        .sidebar.collapsed .sidebar-title,
+        .sidebar.collapsed .new-note-container,
+        .sidebar.collapsed .search-container,
+        .sidebar.collapsed .controls,
+        .sidebar.collapsed .notes-list {
+            display: none;
         }
 
         .new-note-container {
@@ -122,10 +128,6 @@
             outline: none;
             border-color: var(--accent-color);
             box-shadow: 0 0 15px rgba(0, 123, 255, 0.3);
-        }
-
-        .search-box::placeholder {
-            color: #666;
         }
 
         .controls {
@@ -160,8 +162,7 @@
             color: white;
         }
 
-        .add-note-btn,
-        #addNoteBtn {
+        .add-note-btn {
             background: var(--accent-gradient);
             border-color: transparent;
             color: white;
@@ -169,22 +170,19 @@
             transition: all 0.2s ease;
         }
 
-        .add-note-btn:disabled,
-        #addNoteBtn:disabled {
+        .add-note-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             background: linear-gradient(45deg, rgba(0, 123, 255, 0.6), rgba(0, 198, 255, 0.6));
             transform: none;
         }
 
-        /* Add visual cue for disabled New Note button */
-        #addNoteBtn:disabled::after {
+        .add-note-btn:disabled::after {
             content: ' ⏳';
             font-size: 0.8em;
         }
 
-        .add-note-btn:not(:disabled):hover,
-        #addNoteBtn:not(:disabled):hover {
+        .add-note-btn:not(:disabled):hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
@@ -258,7 +256,6 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        /* Main content */
         .main-content {
             flex: 1;
             display: flex;
@@ -316,32 +313,38 @@
             font-size: 1rem !important;
             line-height: 1.6 !important;
             flex-grow: 1;
-            flex: 1;
             overflow-y: auto;
             padding: 10px;
         }
 
-        .TinyMDE .CodeMirror {
-            height: 100%;
-            min-height: 200px;
+        .TMCommandBar {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+            padding: 0.5rem !important;
+            border-radius: 8px 8px 0 0 !important;
+            display: flex !important;
+            visibility: visible !important;
         }
 
-        .TinyMDE::-webkit-scrollbar {
-            width: 8px;
+        .TMCommandButton {
+            background: transparent !important;
+            border: none !important;
+            color: white !important;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
         }
 
-        .TinyMDE::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
+        .TMCommandButton svg {
+            fill: white !important;
         }
 
-        .TinyMDE::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+        .TMCommandButton:hover {
+            opacity: 1;
         }
 
-        .TinyMDE::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
+        .TMCommandButton_Active {
+            color: white !important;
+            opacity: 1;
         }
 
         .editor-buttons {
@@ -386,6 +389,13 @@
             pointer-events: none;
         }
 
+        .export-dropdown:hover .export-dropdown-content {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
         .export-dropdown-content button {
             width: 100%;
             padding: 12px 16px;
@@ -402,39 +412,11 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .export-dropdown-content button:last-child {
-            border-bottom: none;
-        }
-
         .export-dropdown-content button:hover {
             background-color: rgba(0, 123, 255, 0.2);
             color: #fff;
         }
 
-        .export-dropdown-content button:active {
-            background-color: rgba(0, 123, 255, 0.3);
-        }
-
-        .export-dropdown-content button i {
-            width: 20px;
-            text-align: center;
-        }
-
-        /* Show dropdown on hover */
-        .export-dropdown:hover .export-dropdown-content {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-            animation: dropdownFadeIn 0.2s ease-out;
-        }
-
-        /* Update the dropdown arrow when menu is open */
-        .export-dropdown:hover .export-btn span {
-            transform: rotate(180deg);
-        }
-
-        /* Smooth rotation for the dropdown arrow */
         .export-btn span {
             display: inline-block;
             transition: transform 0.2s ease;
@@ -443,223 +425,8 @@
             vertical-align: middle;
         }
 
-        /* Animation for dropdown */
-        @keyframes dropdownFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .add-note-btn,
-        #addNoteBtn {
-            background: var(--accent-gradient);
-            border-color: transparent;
-            color: white;
-            min-width: 215px;
-            transition: all 0.2s ease;
-        }
-
-        .add-note-btn:disabled,
-        #addNoteBtn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            background: linear-gradient(45deg, rgba(0, 123, 255, 0.6), rgba(0, 198, 255, 0.6));
-            transform: none;
-        }
-
-        /* Add visual cue for disabled New Note button */
-        #addNoteBtn:disabled::after {
-            content: ' ⏳';
-            font-size: 0.8em;
-        }
-
-        .add-note-btn:not(:disabled):hover,
-        #addNoteBtn:not(:disabled):hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .notes-list {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            padding: 0.5rem 0;
-            padding-bottom: 1rem;
-        }
-
-        .note-list-item {
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin: 0.5rem;
-            background: rgba(255, 255, 255, 0.03);
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .note-list-item.active {
-            border: 1px solid rgba(58, 123, 213, 0.7);
-            background: rgba(58, 123, 213, 0.1);
-            scroll-margin: 1rem;
-        }
-
-        .note-list-item .note-title {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            background: linear-gradient(45deg, #3a7bd5, #00d1b2);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            display: inline-block;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-        }
-
-        .note-list-item .note-preview {
-            font-size: 0.85rem;
-            color: #b0b0b0;
-            line-height: 1.4;
-            margin: 0.25rem 0;
-            display: -webkit-box;
-            line-clamp: 2;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            flex-grow: 1;
-        }
-
-        .note-list-item .note-date {
-            font-size: 0.7rem;
-            color: #666;
-            margin-top: 0.5rem;
-        }
-
-        .note-list-item:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(0, 123, 255, 0.3);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Main content */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            overflow: hidden;
-            background: var(--primary-bg);
-            color: var(--text-color);
-            margin: 8px 8px 8px 0;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .editor-area {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            padding: 1rem;
-        }
-
-        .editor-area input[type="text"] {
-            width: 100%;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-color);
-            font-family: inherit;
-            font-size: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .editor-area input[type="text"]#noteTitle {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        #tinymde-editor {
-            flex: 1;
-            min-height: 300px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .TinyMDE {
-            display: flex;
-            flex-direction: column;
-            background: transparent !important;
-            border: none !important;
-            color: var(--text-color) !important;
-            font-family: inherit !important;
-            font-size: 1rem !important;
-            line-height: 1.6 !important;
-            flex-grow: 1;
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .TinyMDE .CodeMirror {
-            height: 100%;
-            min-height: 200px;
-        }
-
-        .TinyMDE::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .TinyMDE::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-        }
-
-        .TinyMDE::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-        }
-
-        .TinyMDE::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .editor-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            margin-top: 1rem;
-        }
-
-        .delete-note-btn {
-            background-color: #dc3545;
-            border-color: #dc3545;
-        }
-
-        .delete-note-btn:hover {
-            background-color: #c82333;
-            border-color: #bd2130;
-        }
-
-        .import-container {
-            position: relative;
-            display: inline-block;
+        .export-dropdown:hover .export-btn span {
+            transform: rotate(180deg);
         }
 
         .import-container button {
@@ -696,111 +463,6 @@
             align-items: center;
         }
 
-        .empty-state h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        /* TinyMDE styles */
-        .TMCommandBar {
-            background: rgba(255, 255, 255, 0.08) !important;
-            border-bottom: 1px solid var(--border-color) !important;
-            padding: 0.5rem !important;
-            border-radius: 8px 8px 0 0 !important;
-        }
-
-        .TMCommandButton {
-            background: transparent !important;
-            border: none !important;
-            color: white !important;
-            opacity: 0.8;
-            transition: opacity 0.2s ease;
-        }
-
-        .TMCommandButton svg {
-            fill: white !important;
-        }
-
-        .TMCommandButton:hover {
-            opacity: 1;
-        }
-
-        .TMCommandButton_Active {
-            color: white !important;
-            opacity: 1;
-        }
-
-        .TMCommandButton_Active svg {
-            fill: white !important;
-        }
-
-        .TMCommandDivider {
-            background: var(--border-color) !important;
-        }
-
-        .TinyMDE h1,
-        .TinyMDE h2,
-        .TinyMDE h3,
-        .TinyMDE h4,
-        .TinyMDE h5,
-        .TinyMDE h6 {
-            color: #468be5 !important;
-            margin-top: 1em !important;
-            margin-bottom: 0.5em !important;
-        }
-
-        .TinyMDE p {
-            margin-bottom: 1em !important;
-        }
-
-        .TinyMDE code {
-            background: rgba(255, 255, 255, 0.1) !important;
-            padding: 0.2em 0.4em !important;
-            border-radius: 4px !important;
-            font-size: 0.9em !important;
-        }
-
-        .TinyMDE pre {
-            background: rgba(255, 255, 255, 0.08) !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important;
-            border-radius: 6px !important;
-            padding: 1em !important;
-            overflow-x: auto !important;
-            margin-bottom: 1em !important;
-        }
-
-        .TinyMDE a {
-            color: #3aedd8 !important;
-            text-decoration: none !important;
-        }
-
-        .TinyMDE a:hover {
-            text-decoration: underline !important;
-        }
-
-        .TinyMDE blockquote {
-            border-left: 4px solid rgba(0, 123, 255, 0.5) !important;
-            padding-left: 1em !important;
-            color: #b0b0b0 !important;
-            margin-left: 0 !important;
-            margin-bottom: 1em !important;
-        }
-
-        .TinyMDE ul,
-        .TinyMDE ol {
-            margin-left: 1.5em !important;
-            margin-bottom: 1em !important;
-        }
-
-        .CodeMirror {
-            flex: 1 !important;
-            height: auto !important;
-        }
-
-        .CodeMirror-scroll {
-            min-height: 200px;
-        }
-
         .saving-indicator {
             position: fixed;
             bottom: 1rem;
@@ -830,12 +492,9 @@
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
-        /* Toast notifications */
         .toast-container {
             position: fixed;
             bottom: 20px;
@@ -865,17 +524,9 @@
             transform: translateY(0);
         }
 
-        .toast.error {
-            background-color: #ff4444;
-        }
-
-        .toast.success {
-            background-color: #00C851;
-        }
-
-        .toast.warning {
-            background-color: #ffbb33;
-        }
+        .toast.error { background-color: #ff4444; }
+        .toast.success { background-color: #00C851; }
+        .toast.warning { background-color: #ffbb33; }
 
         .toast button {
             background: rgba(255, 255, 255, 0.2);
@@ -888,22 +539,12 @@
             font-weight: bold;
         }
 
-        .toast button:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        /* Pagination controls */
         .pagination {
             display: flex;
             gap: 0.5rem;
             align-items: center;
             padding: 0.5rem;
             font-size: 0.85rem;
-        }
-
-        .pagination .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
 
         .pagination-btn {
@@ -949,25 +590,21 @@
                 border-bottom: 1px solid var(--border-color);
             }
 
-            .sidebar-toggle {
-                display: block;
+            .sidebar.collapsed {
+                max-height: 60px;
+                width: 100%;
             }
 
             .main-content {
                 width: 100%;
                 flex: none;
             }
-
-            .editor-area input[type="text"] {
-                min-height: 150px;
-            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked@4.0.10/marked.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/tiny-markdown-editor@0.1.31/dist/tiny-mde.min.css" />
-    <script src="https://unpkg.com/tiny-markdown-editor@0.1.31/dist/tiny-mde.min.js"></script>
+    <script src="https://unpkg.com/tiny-markdown-editor@0.2.0/dist/tiny-mde.min.js"></script>
 </head>
-
 <body>
     <div class="app-container">
         <div class="sidebar">
@@ -977,12 +614,10 @@
             </div>
             <div class="new-note-container">
                 <button class="btn" id="install-button" hidden>Install App</button>
-                <button class="btn add-note-btn" id="addNoteBtn" aria-label="Create a new note"
-                    aria-disabled="false">New Note</button>
+                <button class="btn add-note-btn" id="addNoteBtn" aria-label="Create a new note" aria-disabled="false">New Note</button>
             </div>
             <div class="search-container">
-                <input type="text" class="search-box" placeholder="Search notes..." id="searchInput"
-                    aria-label="Search notes">
+                <input type="text" class="search-box" placeholder="Search notes..." id="searchInput" aria-label="Search notes">
             </div>
             <div class="controls" id="filterControls">
                 <button class="btn active" data-filter="all" aria-label="Show all notes">All Notes</button>
@@ -998,24 +633,23 @@
             <div class="editor-area" id="editorArea" style="display: none;">
                 <input type="text" id="noteTitle" placeholder="Note title..." aria-label="Note title">
                 <div id="tinymde-editor"></div>
+                <div id="tinymde_commandbar1"></div>
                 <input type="text" id="noteTags" placeholder="Tags (comma separated)..." aria-label="Note tags">
                 <div class="editor-buttons">
                     <div class="export-dropdown">
-                        <button class="btn export-btn" id="exportNoteBtn" aria-haspopup="true" aria-expanded="false"
-                            aria-label="Export note">
-                            Export Note
-                            <span style="margin-left: 5px;">▼</span>
+                        <button class="btn export-btn" id="exportNoteBtn" aria-haspopup="true" aria-expanded="false" aria-label="Export note">
+                            Export Note <span>▼</span>
                         </button>
                         <div class="export-dropdown-content" role="menu">
                             <button id="exportJsonBtn" role="menuitem">Export as JSON</button>
                             <button id="exportMarkdownBtn" role="menuitem">Export as Markdown</button>
                         </div>
                     </div>
-                    <div class="import-container" style="position: relative; display: inline-block;">
+                    <div class="import-container">
                         <button class="btn" id="importNoteBtn" aria-label="Import note">
                             <i class="fas fa-file-import"></i> Import Note
                         </button>
-                        <input type="file" id="importFileInput" accept=".json,.md,.txt" style="display: none;" />
+                        <input type="file" id="importFileInput" accept=".json,.md,.txt" />
                     </div>
                     <button class="btn delete-note-btn" id="deleteNoteBtn" aria-label="Delete note">Delete Note</button>
                 </div>
@@ -1030,53 +664,38 @@
         <div class="spinner"></div>
         <span>Saving...</span>
     </div>
-    <div id="autosaveStatus" aria-live="polite"
-        style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0);"></div>
     <div id="toastContainer" class="toast-container"></div>
 
     <script>
-      document.addEventListener("DOMContentLoaded", function() {
-          // Register the service worker
-          if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("service-worker.js", {
-            scope: "/HTMLNotes/"
+        // Service Worker Registration
+        document.addEventListener("DOMContentLoaded", function() {
+            if ("serviceWorker" in navigator) {
+                navigator.serviceWorker.register("service-worker.js", { scope: "/HTMLNotes/" });
+            }
+
+            let deferredPrompt;
+            const installButton = document.getElementById("install-button");
+            window.addEventListener("beforeinstallprompt", (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installButton.hidden = false;
             });
-          }
 
-          let deferredPrompt;
-          const installButton = document.getElementById("install-button");
-
-          // Listen for the install prompt
-          window.addEventListener("beforeinstallprompt", (e) => {
-              e.preventDefault();
-              deferredPrompt = e;
-              installButton.hidden = false;
-          });
-
-          // Handle install button click
-          installButton.addEventListener("click", async () => {
-              const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-
-              if (isStandalone) {
-                  console.log("App is already installed");
-                  return;
-              }
-
-              if (deferredPrompt) {
-                  deferredPrompt.prompt();
-                  const { outcome } = await deferredPrompt.userChoice;
-                  deferredPrompt = null;
-                  console.log(outcome === "accepted" ? "User accepted install prompt" : "User dismissed install prompt");
-              } else {
-                  if (window.matchMedia("(display-mode: browser)").matches) {
-                      window.location.assign("chrome://apps/");
-                  }
-              }
-          });
+            installButton.addEventListener("click", async () => {
+                const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+                if (isStandalone) return;
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                    console.log(outcome === "accepted" ? "User accepted install prompt" : "User dismissed install prompt");
+                } else if (window.matchMedia("(display-mode: browser)").matches) {
+                    window.location.assign("chrome://apps/");
+                }
+            });
         });
-    </script>
-    <script>
-        // --- IndexedDB Setup ---
+
+        // IndexedDB Setup
         let db;
         const DB_NAME = 'HTMLNotesDB';
         const DB_VERSION = 1;
@@ -1085,24 +704,19 @@
         function openDatabase() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-                request.onerror = (event) => {
-                    console.error('IndexedDB error:', event.target.errorCode);
+                request.onerror = () => {
+                    console.error('IndexedDB error:', request.error);
                     showToast('Error opening database.', 'error');
                     reject('Database error');
                 };
-
                 request.onupgradeneeded = (event) => {
                     db = event.target.result;
                     const objectStore = db.createObjectStore(OBJECT_STORE_NAME, { keyPath: 'id', autoIncrement: true });
                     objectStore.createIndex('date', 'date', { unique: false });
                     objectStore.createIndex('category', 'category', { unique: false });
-                    console.log('Database setup complete');
                 };
-
-                request.onsuccess = (event) => {
+                request.onsuccess = () => {
                     db = event.target.result;
-                    console.log('Database opened successfully');
                     resolve(db);
                 };
             });
@@ -1113,10 +727,8 @@
                 const transaction = db.transaction([OBJECT_STORE_NAME], 'readwrite');
                 const objectStore = transaction.objectStore(OBJECT_STORE_NAME);
                 const request = objectStore.add(note);
-
                 request.onsuccess = () => resolve(request.result);
-                request.onerror = (event) => {
-                    console.error('Error adding note:', event.target.error);
+                request.onerror = () => {
                     showToast('Error saving note.', 'error');
                     reject('Error adding note');
                 };
@@ -1128,11 +740,9 @@
                 const transaction = db.transaction([OBJECT_STORE_NAME], 'readwrite');
                 const objectStore = transaction.objectStore(OBJECT_STORE_NAME);
                 const request = objectStore.put(note);
-
                 request.onsuccess = () => resolve();
-                request.onerror = (event) => {
-                    console.error('Error updating note:', event.target.error);
-                    showToast('Error saving note.', 'error');
+                request.onerror = () => {
+                    showToast('Error updating note.', 'error');
                     reject('Error updating note');
                 };
             });
@@ -1143,10 +753,8 @@
                 const transaction = db.transaction([OBJECT_STORE_NAME], 'readwrite');
                 const objectStore = transaction.objectStore(OBJECT_STORE_NAME);
                 const request = objectStore.delete(id);
-
                 request.onsuccess = () => resolve();
-                request.onerror = (event) => {
-                    console.error('Error deleting note:', event.target.error);
+                request.onerror = () => {
                     showToast('Error deleting note.', 'error');
                     reject('Error deleting note');
                 };
@@ -1158,10 +766,8 @@
                 const transaction = db.transaction([OBJECT_STORE_NAME], 'readonly');
                 const objectStore = transaction.objectStore(OBJECT_STORE_NAME);
                 const request = objectStore.getAll();
-
                 request.onsuccess = () => resolve(request.result);
-                request.onerror = (event) => {
-                    console.error('Error getting all notes:', event.target.error);
+                request.onerror = () => {
                     showToast('Error loading notes.', 'error');
                     reject('Error getting all notes');
                 };
@@ -1171,22 +777,19 @@
         function getNoteById(id) {
             const noteId = parseInt(id);
             if (isNaN(noteId)) return Promise.reject('Invalid note ID');
-
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([OBJECT_STORE_NAME], 'readonly');
                 const objectStore = transaction.objectStore(OBJECT_STORE_NAME);
                 const request = objectStore.get(noteId);
-
                 request.onsuccess = () => resolve(request.result);
-                request.onerror = (event) => {
-                    console.error('Error getting note by ID:', event.target.error);
+                request.onerror = () => {
                     showToast('Error loading note.', 'error');
                     reject('Error getting note by ID');
                 };
             });
         }
 
-        // --- UI and Event Handling ---
+        // UI and Event Handling
         const notesList = document.getElementById('notesList');
         const searchInput = document.getElementById('searchInput');
         const addNoteBtn = document.getElementById('addNoteBtn');
@@ -1207,34 +810,23 @@
         let currentEditingNoteId = null;
         let allNotesCache = [];
         let lastDeletedNote = null;
-        let isSettingDefaultTitle = false;
         const markdownCache = new Map();
         const PAGE_SIZE = 20;
         let currentPage = parseInt(new URLSearchParams(window.location.search).get('page')) || 1;
 
         function showSavingIndicator() {
-            const indicator = document.getElementById('savingIndicator');
-            if (indicator) {
-                indicator.classList.add('visible');
-            }
+            document.getElementById('savingIndicator').classList.add('visible');
         }
 
         function hideSavingIndicator() {
-            const indicator = document.getElementById('savingIndicator');
-            if (indicator) {
-                indicator.classList.remove('visible');
-            }
+            document.getElementById('savingIndicator').classList.remove('visible');
         }
 
         function showToast(message, type = 'error', duration = 3000) {
             const toastContainer = document.getElementById('toastContainer');
-            if (!toastContainer) return;
-
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.innerHTML = message;
-
-            // Add close button
             const closeButton = document.createElement('button');
             closeButton.textContent = '×';
             closeButton.setAttribute('aria-label', 'Close');
@@ -1243,22 +835,13 @@
                 setTimeout(() => toast.remove(), 300);
             };
             toast.appendChild(closeButton);
-
             toastContainer.appendChild(toast);
-
-            // Trigger reflow to ensure transition works
             void toast.offsetWidth;
-
-            // Show toast
             toast.classList.add('show');
-
-            // Auto-remove after duration
             const timeout = setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
             }, duration);
-
-            // Return a function to manually dismiss the toast
             return () => {
                 clearTimeout(timeout);
                 toast.classList.remove('show');
@@ -1283,26 +866,16 @@
 
         function initializeTinyMDE(attempts = 3) {
             const editorContainer = document.getElementById('tinymde-editor');
-
             if (!editorContainer) {
                 if (attempts > 0) {
-                    console.log(`Editor container not found, retrying... (${attempts} attempts left)`);
                     setTimeout(() => initializeTinyMDE(attempts - 1), 100);
                     return;
-                } else {
-                    console.error('Editor container not found after retries');
-                    showToast('Failed to initialize editor. Please refresh the page.', 'error');
-                    return;
                 }
+                showToast('Editor container not found.', 'error');
+                return;
             }
 
             try {
-                if (typeof TinyMDE === 'undefined' || !TinyMDE.Editor) {
-                    console.error('TinyMDE is not properly loaded');
-                    showToast('Editor library failed to load. Please refresh the page.', 'error');
-                    return;
-                }
-
                 tinyMdeEditor = new TinyMDE.Editor({
                     element: editorContainer,
                     forceSync: true,
@@ -1311,24 +884,20 @@
                     promptURLs: true,
                     autofocus: true,
                     placeholder: 'Start writing your note here...',
-                    onUpdate: debounceAutosave,
                     toolbar: [
                         'bold', 'italic', 'heading', '|',
                         'quote', 'unordered-list', 'ordered-list', '|',
                         'link', 'image', 'table', '|',
                         'preview', 'side-by-side', 'fullscreen', '|',
                         'guide'
-                    ]
+                    ],
+                    onUpdate: debounceAutosave
                 });
+                var commandBar1 = new TinyMDE.CommandBar({element: 'tinymde_commandbar1', editor: tinyMdeEditor});
 
                 const observer = new MutationObserver((mutations) => {
-                    const contentChanged = mutations.some(mutation => {
-                        return mutation.type === 'childList' ||
-                            (mutation.type === 'characterData' && mutation.target.parentNode && mutation.target.parentNode.closest('.TinyMDE'));
-                    });
-
-                    if (contentChanged && !window.isSettingEditorContent) {
-                        debounceAutosave();
+                    if (mutations.some(m => m.type === 'childList' || (m.type === 'characterData' && m.target.parentNode?.closest('.TinyMDE')))) {
+                        if (!window.isSettingEditorContent) debounceAutosave();
                     }
                 });
 
@@ -1340,24 +909,19 @@
                         characterData: true
                     });
                 }
-
                 window.editorObserver = observer;
-                console.log('TinyMDE initialized successfully');
             } catch (error) {
                 console.error('Error initializing TinyMDE:', error);
-                showToast('Error initializing editor. Please refresh the page.', 'error');
+                showToast('Error initializing editor.', 'error');
             }
         }
 
         function setEditorContent(content) {
             if (!tinyMdeEditor) return;
-
             try {
                 window.isSettingEditorContent = true;
                 tinyMdeEditor.setContent(content || '');
-                setTimeout(() => {
-                    window.isSettingEditorContent = false;
-                }, 100);
+                setTimeout(() => window.isSettingEditorContent = false, 100);
             } catch (error) {
                 console.error('Error setting editor content:', error);
                 window.isSettingEditorContent = false;
@@ -1378,11 +942,7 @@
                 const currentTitle = noteTitleInput ? noteTitleInput.value.trim() : '';
                 const currentTags = noteTagsInput ? noteTagsInput.value.trim() : '';
 
-                if (currentContent === lastContent &&
-                    currentTitle === lastTitle &&
-                    currentTags === lastTags) {
-                    return;
-                }
+                if (currentContent === lastContent && currentTitle === lastTitle && currentTags === lastTags) return;
 
                 saveQueue.push({ currentContent, currentTitle, currentTags });
 
@@ -1396,7 +956,7 @@
                             isSaving = false;
                             addNoteBtn.disabled = false;
                             addNoteBtn.setAttribute('aria-disabled', 'false');
-                            showToast('Autosave timed out. Please try again.', 'error');
+                            showToast('Autosave timed out.', 'error');
                         }
                     }, 5000);
 
@@ -1408,7 +968,6 @@
                         lastTitle = currentTitle;
                         lastTags = currentTags;
                     } catch (error) {
-                        console.error('Autosave error:', error);
                         showToast('Error saving note.', 'error');
                     } finally {
                         clearTimeout(timeoutId);
@@ -1416,9 +975,7 @@
                         isSaving = false;
                         addNoteBtn.disabled = false;
                         addNoteBtn.setAttribute('aria-disabled', 'false');
-                        if (saveQueue.length > 0) {
-                            setTimeout(processQueue, 100);
-                        }
+                        if (saveQueue.length > 0) setTimeout(processQueue, 100);
                     }
                 };
 
@@ -1445,10 +1002,8 @@
             addNoteBtn.addEventListener('click', openEditorForAdd);
 
             deleteNoteBtn.addEventListener('click', async () => {
-                if (currentEditingNoteId !== null) {
-                    if (confirm('Are you sure you want to delete this note?')) {
-                        await handleDeleteNote(currentEditingNoteId);
-                    }
+                if (currentEditingNoteId !== null && confirm('Are you sure you want to delete this note?')) {
+                    await handleDeleteNote(currentEditingNoteId);
                 } else {
                     clearEditor();
                     showEmptyState('main');
@@ -1460,10 +1015,7 @@
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.export-dropdown')) {
-                    const dropdowns = document.querySelectorAll('.export-dropdown-content');
-                    dropdowns.forEach(dropdown => {
-                        dropdown.style.display = 'none';
-                    });
+                    document.querySelectorAll('.export-dropdown-content').forEach(d => d.style.display = 'none');
                 }
             });
 
@@ -1471,11 +1023,7 @@
                 e.stopPropagation();
                 const dropdown = e.currentTarget.nextElementSibling;
                 const isExpanded = dropdown.style.display === 'block';
-
-                document.querySelectorAll('.export-dropdown-content').forEach(d => {
-                    d.style.display = 'none';
-                });
-
+                document.querySelectorAll('.export-dropdown-content').forEach(d => d.style.display = 'none');
                 dropdown.style.display = isExpanded ? 'none' : 'block';
                 exportNoteBtn.setAttribute('aria-expanded', !isExpanded);
             });
@@ -1496,23 +1044,14 @@
             window.addEventListener('popstate', () => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const page = parseInt(urlParams.get('page')) || 1;
-                if (page !== currentPage) {
-                    changePage(page);
-                }
+                if (page !== currentPage) changePage(page);
             });
         }
 
         async function loadAndRenderNotes() {
             if (!db) {
                 showToast('Database not available. Retrying...', 'error');
-                try {
-                    await openDatabase();
-                } catch (error) {
-                    console.error('Database retry failed:', error);
-                    showToast('Failed to initialize database.', 'error');
-                    disableEditor();
-                    return;
-                }
+                await openDatabase();
             }
             try {
                 allNotesCache = await getAllNotes();
@@ -1520,8 +1059,7 @@
                 renderFilterButtons();
                 renderNotesList();
             } catch (error) {
-                console.error('Error loading notes:', error);
-                showToast('Error loading notes. Retrying...', 'error');
+                showToast('Error loading notes.', 'error');
                 setTimeout(loadAndRenderNotes, 2000);
             }
         }
@@ -1602,9 +1140,7 @@
 
         function renderPagination(totalPages) {
             const existingPagination = document.querySelector('.pagination');
-            if (existingPagination) {
-                existingPagination.remove();
-            }
+            if (existingPagination) existingPagination.remove();
 
             const paginationContainer = document.createElement('div');
             paginationContainer.className = 'pagination';
@@ -1629,7 +1165,7 @@
             nextButton.setAttribute('aria-label', 'Next page');
             nextButton.addEventListener('click', () => changePage(currentPage + 1));
 
-            const handleKeyDown = (e) => {
+            paginationContainer.addEventListener('keydown', (e) => {
                 if (e.key === 'ArrowLeft' && currentPage > 1) {
                     changePage(currentPage - 1);
                     prevButton.focus();
@@ -1637,18 +1173,12 @@
                     changePage(currentPage + 1);
                     nextButton.focus();
                 }
-            };
-
-            paginationContainer.addEventListener('keydown', handleKeyDown);
+            });
 
             paginationContainer.appendChild(prevButton);
             paginationContainer.appendChild(pageInfo);
             paginationContainer.appendChild(nextButton);
-
-            const notesContainer = document.querySelector('.notes-list');
-            if (notesContainer && notesContainer.parentNode) {
-                notesContainer.parentNode.insertBefore(paginationContainer, notesContainer.nextSibling);
-            }
+            notesList.parentNode.insertBefore(paginationContainer, notesList.nextSibling);
         }
 
         async function changePage(newPage) {
@@ -1671,9 +1201,7 @@
             noteTagsInput.value = '';
             if (tinyMdeEditor) {
                 setEditorContent('');
-                if (typeof tinyMdeEditor.enable === 'function') {
-                    tinyMdeEditor.enable();
-                }
+                if (typeof tinyMdeEditor.enable === 'function') tinyMdeEditor.enable();
             }
             currentEditingNoteId = null;
             deleteNoteBtn.style.display = 'none';
@@ -1681,24 +1209,11 @@
             notesList.querySelectorAll('.note-list-item').forEach(item => item.classList.remove('active'));
         }
 
-        function disableEditor() {
-            noteTitleInput.disabled = true;
-            noteTagsInput.disabled = true;
-            if (tinyMdeEditor && typeof tinyMdeEditor.disable === 'function') {
-                tinyMdeEditor.disable();
-            }
-            deleteNoteBtn.disabled = true;
-            exportNoteBtn.disabled = true;
-            addNoteBtn.disabled = true;
-            showToast('Editor disabled due to an error.', 'error');
-        }
-
         let untitledNoteCount = 0;
 
         async function openEditorForAdd() {
             clearEditor();
             showEditor();
-
             const notes = await getAllNotes();
             const untitledNotes = notes.filter(note => note.title && note.title.startsWith('Untitled '));
             const maxNumber = untitledNotes.reduce((max, note) => {
@@ -1707,20 +1222,11 @@
             }, 0);
 
             untitledNoteCount = maxNumber + 1;
-            isSettingDefaultTitle = true;
             noteTitleInput.value = `Untitled ${untitledNoteCount}`;
-            setTimeout(() => { isSettingDefaultTitle = false; }, 0);
-
+            setEditorContent('');
             if (tinyMdeEditor) {
-                setEditorContent('');
-                if (typeof tinyMdeEditor.enable === 'function') {
-                    tinyMdeEditor.enable();
-                }
-                try {
-                    setTimeout(() => tinyMdeEditor.codemirror?.focus(), 100);
-                } catch (e) {
-                    console.warn('Failed to focus editor:', e);
-                }
+                tinyMdeEditor.enable?.();
+                setTimeout(() => tinyMdeEditor.codemirror?.focus(), 100);
             }
         }
 
@@ -1728,21 +1234,15 @@
             try {
                 const note = await getNoteById(id);
                 if (!note) {
-                    console.error('Note not found:', id);
                     showToast('Note not found.', 'error');
                     return;
                 }
-
                 currentEditingNoteId = id;
                 showEditor();
                 noteTitleInput.value = note.title || '';
                 noteTagsInput.value = note.tags ? note.tags.join(', ') : '';
-                if (tinyMdeEditor) {
-                    setEditorContent(note.content || '');
-                    if (typeof tinyMdeEditor.enable === 'function') {
-                        tinyMdeEditor.enable();
-                    }
-                }
+                setEditorContent(note.content || '');
+                if (tinyMdeEditor) tinyMdeEditor.enable?.();
                 deleteNoteBtn.style.display = 'inline-block';
                 exportNoteBtn.style.display = 'inline-block';
                 notesList.querySelectorAll('.note-list-item').forEach(item => {
@@ -1750,24 +1250,18 @@
                 });
                 scrollToActiveNote();
             } catch (error) {
-                console.error('Error opening note:', error);
                 showToast('Error loading note.', 'error');
             }
         }
 
         async function handleSaveNote(showNotification = true) {
-            const wasDisabled = addNoteBtn.disabled;
-            if (!wasDisabled) {
-                addNoteBtn.disabled = true;
-            }
-
+            addNoteBtn.disabled = true;
             const title = noteTitleInput.value.trim() || `Untitled ${untitledNoteCount++}`;
             const content = tinyMdeEditor ? tinyMdeEditor.getContent().trim() : '';
             const tagsInput = noteTagsInput.value.trim();
             const tags = validateTags(tagsInput);
             const category = inferCategory(tags);
             const currentDate = new Date().toISOString().split('T')[0];
-
             const note = { title, content, tags, date: currentDate, category };
 
             try {
@@ -1790,14 +1284,10 @@
                     });
                 }
             } catch (error) {
-                console.error('Error saving note:', error);
                 showToast('Error saving note.', 'error');
-                throw error; // Re-throw to be caught by the caller
+                throw error;
             } finally {
-                // Only re-enable if we were the ones who disabled it
-                if (!wasDisabled) {
-                    addNoteBtn.disabled = false;
-                }
+                addNoteBtn.disabled = false;
             }
         }
 
@@ -1808,16 +1298,13 @@
                 clearEditor();
                 await loadAndRenderNotes();
                 showEmptyState('main');
-
                 const undoToast = showToast(
                     'Note deleted. <button onclick="event.stopPropagation(); undoDelete()">Undo</button>',
                     'success',
                     10000
                 );
-
                 window.currentUndoToast = undoToast;
             } catch (error) {
-                console.error('Error deleting note:', error);
                 showToast('Error deleting note.', 'error');
             }
         }
@@ -1827,17 +1314,14 @@
                 window.currentUndoToast();
                 window.currentUndoToast = null;
             }
-
             if (lastDeletedNote) {
                 try {
                     const newId = await addNote(lastDeletedNote);
                     lastDeletedNote.id = newId;
                     await loadAndRenderNotes();
                     openEditorForEdit(newId);
-                    lastDeletedNote = null;
                     showToast('Note restored.', 'success');
                 } catch (error) {
-                    console.error('Error undoing delete:', error);
                     showToast('Error restoring note.', 'error');
                 }
             }
@@ -1848,24 +1332,19 @@
                 showToast('No note selected to export.', 'error');
                 return;
             }
-
             try {
                 const note = await getNoteById(currentEditingNoteId);
                 if (!note) {
                     showToast('Note not found.', 'error');
                     return;
                 }
-
                 let blob, filename, mimeType;
-
                 if (format === 'md') {
                     const title = note.title ? `# ${note.title}\n\n` : '';
                     const tags = note.tags && note.tags.length > 0 ? `**Tags:** ${note.tags.join(', ')}\n\n` : '';
                     const date = note.date ? `*Created: ${note.date}*\n\n` : '';
                     const content = note.content || '';
-
                     const markdownContent = `${title}${tags}${date}${content}`;
-
                     blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
                     filename = `${note.title || 'note'}.md`;
                     mimeType = 'text/markdown';
@@ -1877,27 +1356,22 @@
                         date: note.date,
                         category: note.category
                     }, null, 2);
-
                     blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
                     filename = `${note.title || 'note'}.json`;
                     mimeType = 'application/json';
                 }
-
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = filename;
                 document.body.appendChild(a);
                 a.click();
-
                 setTimeout(() => {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                 }, 0);
-
-                showToast(`Note exported as ${format.toUpperCase()} successfully.`, 'success');
+                showToast(`Note exported as ${format.toUpperCase()}.`, 'success');
             } catch (error) {
-                console.error('Error exporting note:', error);
                 showToast('Error exporting note.', 'error');
             }
         }
@@ -1905,7 +1379,6 @@
         async function handleImport(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
@@ -1915,7 +1388,7 @@
                         if (!note.content || typeof note.content !== 'string') {
                             throw new Error('Invalid JSON format: content is required');
                         }
-                        note.title = note.title || e.target.result.split('\n')[0]?.substring(0, 100) || file.name.replace('.json', '');
+                        note.title = note.title || file.name.replace('.json', '');
                         note.tags = Array.isArray(note.tags) ? note.tags : [];
                         note.category = note.category || inferCategory(note.tags);
                     } else {
@@ -1939,7 +1412,6 @@
                     openEditorForEdit(newId);
                     showToast('Note imported successfully!', 'success');
                 } catch (error) {
-                    console.error('Error importing note:', error);
                     showToast(`Error importing note: ${error.message}`, 'error');
                 }
                 event.target.value = '';
@@ -1950,13 +1422,8 @@
         function setupImport() {
             const importBtn = document.getElementById('importNoteBtn');
             const fileInput = document.getElementById('importFileInput');
-
             if (!importBtn || !fileInput) return;
-
-            importBtn.addEventListener('click', () => {
-                fileInput.click();
-            });
-
+            importBtn.addEventListener('click', () => fileInput.click());
             fileInput.addEventListener('change', handleImport);
         }
 
@@ -1980,7 +1447,6 @@
                     minute: '2-digit'
                 });
             } catch (e) {
-                console.error('Error formatting date:', e);
                 return dateString;
             }
         }
@@ -1992,11 +1458,9 @@
                 const now = new Date();
                 noteDate.setHours(0, 0, 0, 0);
                 now.setHours(0, 0, 0, 0);
-                const diffTime = now - noteDate;
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                const diffDays = Math.floor((now - noteDate) / (1000 * 60 * 60 * 24));
                 return diffDays >= 0 && diffDays <= 7;
             } catch (e) {
-                console.error('Error checking date:', e);
                 return false;
             }
         }
@@ -2019,7 +1483,7 @@
             if (area === 'sidebar') {
                 notesList.style.display = 'none';
                 sidebarEmptyState.style.display = 'block';
-            } else if (area == 'main') {
+            } else if (area === 'main') {
                 editorArea.style.display = 'none';
                 mainEmptyState.style.display = 'flex';
             }
@@ -2047,9 +1511,6 @@
                 const preview = marked.parse(escapeHTML(content.substring(0, 120) + (content.length > 120 ? '...' : '')));
                 markdownCache.set(key, preview);
                 if (markdownCache.size > 100) {
-                    if (process.env.NODE_ENV !== 'production') {
-                        console.log('Clearing oldest cache entry. Current size:', markdownCache.size);
-                    }
                     markdownCache.delete(markdownCache.keys().next().value);
                 }
             }
@@ -2057,5 +1518,4 @@
         }
     </script>
 </body>
-
 </html>
