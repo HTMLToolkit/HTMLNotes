@@ -1,19 +1,19 @@
 {
   "name": "HTMLNotes",
   "short_name": "HTMLNotes",
-  "start_url": "/HTMLNotes/",
-  "scope": "/HTMLNotes/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f5f5f5",
   "theme_color": "#2196F3",
   "icons": [
     {
-      "src": "/HTMLNotes/favicon.png",
+      "src": "./favicon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/HTMLNotes/favicon.png",
+      "src": "./favicon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
