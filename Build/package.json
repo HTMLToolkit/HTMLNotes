@@ -21,7 +21,6 @@
   "homepage": "https://github.com/NellowTCS/HTMLNotes#readme",
   "dependencies": {
     "marked": "^16.3.0",
-    "tiny-markdown-editor": "^0.2.3",
     "vite": "^7.1.3"
   },
   "devDependencies": {

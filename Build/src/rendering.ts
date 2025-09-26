@@ -1,45 +1,46 @@
-// rendering.js - Functions for rendering notes list and pagination
+// rendering.ts - Functions for rendering notes list and pagination
+
 import {
   formatDate,
   isRecent,
   escapeHTML,
   renderNotePreview,
-} from "./utils.js";
-import { openEditorForEdit, getCurrentEditingNoteId } from "./notes.js";
+} from "./utils";
+import { openEditorForEdit, getCurrentEditingNoteId } from "./notes";
 
 let currentFilter = "all";
 let currentPage = 1;
 const PAGE_SIZE = 20;
-let allNotesCache = [];
+let allNotesCache: Note[] = [];
 
-export function setCurrentFilter(filter) {
+export function setCurrentFilter(filter: string): void {
   currentFilter = filter;
 }
 
-export function getCurrentFilter() {
+export function getCurrentFilter(): string {
   return currentFilter;
 }
 
-export function setCurrentPage(page) {
+export function setCurrentPage(page: number): void {
   currentPage = page;
 }
 
-export function getCurrentPage() {
+export function getCurrentPage(): number {
   return currentPage;
 }
 
-export function setAllNotesCache(notes) {
+export function setAllNotesCache(notes: Note[]): void {
   allNotesCache = notes;
 }
 
-export function renderFilterButtons() {
-  const filterControls = document.getElementById("filterControls");
+export function renderFilterButtons(): void {
+  const filterControls = document.getElementById("filterControls")!;
   const existingButtons = filterControls.querySelectorAll(
     '.btn:not([data-filter="all"]):not([data-filter="recent"])'
   );
   existingButtons.forEach((btn) => btn.remove());
 
-  const allTags = new Set();
+  const allTags = new Set<string>();
   allNotesCache.forEach((note) => {
     if (note.tags && Array.isArray(note.tags)) {
       note.tags.forEach((tag) => allTags.add(tag.trim().toLowerCase()));
@@ -52,7 +53,7 @@ export function renderFilterButtons() {
     if (tag) {
       const button = document.createElement("button");
       button.classList.add("btn");
-      button.dataset.filter = tag;
+      (button as HTMLElement).dataset.filter = tag;
       button.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
       button.setAttribute("aria-label", `Filter by ${tag} tag`);
       fragment.appendChild(button);
@@ -60,13 +61,13 @@ export function renderFilterButtons() {
   });
 
   filterControls.appendChild(fragment);
-  filterControls.querySelector('[data-filter="all"]').classList.add("active");
+  filterControls.querySelector('[data-filter="all"]')!.classList.add("active");
 }
 
-export function renderNotesList(loadAndRenderCallback = null) {
-  const notesList = document.getElementById("notesList");
-  const sidebarEmptyState = document.getElementById("sidebarEmptyState");
-  const searchInput = document.getElementById("searchInput");
+export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | null = null): void {
+  const notesList = document.getElementById("notesList")!;
+  const sidebarEmptyState = document.getElementById("sidebarEmptyState")!;
+  const searchInput = document.getElementById("searchInput") as HTMLInputElement;
 
   const searchTerm = searchInput.value.toLowerCase();
   let filteredNotes = allNotesCache.filter((note) => {
@@ -84,7 +85,7 @@ export function renderNotesList(loadAndRenderCallback = null) {
   });
 
   if (currentFilter !== "recent") {
-    filteredNotes.sort((a, b) => new Date(b.date) - new Date(a.date));
+    filteredNotes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
   const start = (currentPage - 1) * PAGE_SIZE;
@@ -119,7 +120,7 @@ export function renderNotesList(loadAndRenderCallback = null) {
 
     notesList.querySelectorAll(".note-list-item").forEach((item) => {
       item.addEventListener("click", () => {
-        const noteId = parseInt(item.dataset.id);
+        const noteId = parseInt((item as HTMLElement).dataset.id!);
         openEditorForEdit(noteId);
       });
     });
@@ -129,8 +130,8 @@ export function renderNotesList(loadAndRenderCallback = null) {
   renderPagination(totalPages, loadAndRenderCallback);
 }
 
-export function renderPagination(totalPages, loadAndRenderCallback) {
-  const notesList = document.getElementById("notesList");
+export function renderPagination(totalPages: number, loadAndRenderCallback: (() => Promise<void>) | null): void {
+  const notesList = document.getElementById("notesList")!;
   const existingPagination = document.querySelector(".pagination");
   if (existingPagination) existingPagination.remove();
 
@@ -164,7 +165,7 @@ export function renderPagination(totalPages, loadAndRenderCallback) {
     changePage(currentPage + 1, loadAndRenderCallback)
   );
 
-  paginationContainer.addEventListener("keydown", (e) => {
+  paginationContainer.addEventListener("keydown", (e: KeyboardEvent) => {
     if (e.key === "ArrowLeft" && currentPage > 1) {
       changePage(currentPage - 1, loadAndRenderCallback);
       prevButton.focus();
@@ -177,16 +178,16 @@ export function renderPagination(totalPages, loadAndRenderCallback) {
   paginationContainer.appendChild(prevButton);
   paginationContainer.appendChild(pageInfo);
   paginationContainer.appendChild(nextButton);
-  notesList.parentNode.insertBefore(paginationContainer, notesList.nextSibling);
+  notesList.parentNode!.insertBefore(paginationContainer, notesList.nextSibling);
 }
 
-export async function changePage(newPage, loadAndRenderCallback) {
+export async function changePage(newPage: number, loadAndRenderCallback: (() => Promise<void>) | null): Promise<void> {
   if (newPage < 1 || newPage > Math.ceil(allNotesCache.length / PAGE_SIZE))
     return;
   currentPage = newPage;
   if (loadAndRenderCallback) await loadAndRenderCallback();
-  const url = new URL(window.location);
-  url.searchParams.set("page", newPage);
+  const url = new URL(window.location.href);
+  url.searchParams.set("page", newPage.toString());
   window.history.pushState({}, "", url);
   document.querySelector(".notes-list")?.scrollIntoView({ behavior: "smooth" });
 }

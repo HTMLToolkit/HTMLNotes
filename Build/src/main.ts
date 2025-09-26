@@ -1,11 +1,12 @@
+// main.ts - Application entry point
 const TinyMDE = window.TinyMDE;
 import { marked } from "marked";
 
 // Import modules
-import { openDatabase, getAllNotes } from "./database.js";
-import { showToast, showEmptyState, clearEditor } from "./ui.js";
-import { initializeTinyMDE, createDebounceAutosave } from "./editor.js";
-import { setupEventListeners, setupNavigation, setupImport } from "./events.js";
+import { openDatabase, getAllNotes } from "./database";
+import { showToast, showEmptyState, clearEditor } from "./ui";
+import { initializeTinyMDE, createDebounceAutosave } from "./editor";
+import { setupEventListeners, setupNavigation, setupImport } from "./events";
 import {
   renderFilterButtons,
   renderNotesList,
@@ -13,7 +14,7 @@ import {
   setCurrentPage,
   setAllNotesCache,
   changePage,
-} from "./rendering.js";
+} from "./rendering";
 import {
   handleSaveNote,
   handleDeleteNote,
@@ -24,9 +25,9 @@ import {
   openEditorForEdit,
   setCurrentEditingNoteId,
   getCurrentEditingNoteId,
-} from "./notes.js";
+} from "./notes";
 
-let allNotesCache = [];
+let allNotesCache: Note[] = [];
 
 // Initialization
 document.addEventListener("DOMContentLoaded", async () => {
@@ -40,8 +41,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupImport();
     setupNavigation(loadAndRenderNotes);
     // Set up debounce for title and tags
-    const noteTitleInput = document.getElementById("noteTitle");
-    const noteTagsInput = document.getElementById("noteTags");
+    const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
+    const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
     noteTitleInput.addEventListener("input", debounceAutosave);
     noteTagsInput.addEventListener("input", debounceAutosave);
   } catch (error) {
@@ -50,10 +51,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-async function loadAndRenderNotes() {
+async function loadAndRenderNotes(): Promise<void> {
   try {
     allNotesCache = await getAllNotes();
-    allNotesCache.sort((a, b) => new Date(b.date) - new Date(a.date));
+    allNotesCache.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setAllNotesCache(allNotesCache);
     renderFilterButtons();
     renderNotesList(loadAndRenderNotes);
@@ -64,4 +65,4 @@ async function loadAndRenderNotes() {
 }
 
 // Expose functions to window for HTML onclick attributes
-window.undoDelete = undoDelete;
+(window as any).undoDelete = undoDelete;

@@ -1,49 +1,50 @@
-// notes.js - Note CRUD operations
+// notes.ts - Note CRUD operations
+
 import {
   addNote as dbAddNote,
   updateNote as dbUpdateNote,
   deleteNote as dbDeleteNote,
   getAllNotes as dbGetAllNotes,
   getNoteById as dbGetNoteById,
-} from "./database.js";
-import { showToast } from "./notifications.js";
-import { showEditor, clearEditor, scrollToActiveNote } from "./ui.js";
+} from "./database";
+import { showToast } from "./notifications";
+import { showEditor, clearEditor, scrollToActiveNote } from "./ui";
 import {
   setEditorContent,
   getEditorContent,
   enableEditor,
   focusEditor,
-} from "./editor.js";
-import { validateTags, inferCategory } from "./utils.js";
+} from "./editor";
+import { validateTags, inferCategory } from "./utils";
 
-let currentEditingNoteId = null;
-let lastDeletedNote = null;
+let currentEditingNoteId: number | null = null;
+let lastDeletedNote: Note | undefined = undefined;
 let untitledNoteCount = 0;
-let allNotesCache = [];
+let allNotesCache: Note[] = [];
 
-export function setCurrentEditingNoteId(id) {
+export function setCurrentEditingNoteId(id: number | null): void {
   currentEditingNoteId = id;
 }
 
-export function getCurrentEditingNoteId() {
+export function getCurrentEditingNoteId(): number | null {
   return currentEditingNoteId;
 }
 
-export function setAllNotesCache(notes) {
+export function setAllNotesCache(notes: Note[]): void {
   allNotesCache = notes;
 }
 
-export function getAllNotesCache() {
+export function getAllNotesCache(): Note[] {
   return allNotesCache;
 }
 
-export async function handleSaveNote(showNotification = true) {
-  const addNoteBtn = document.getElementById("addNoteBtn");
-  const noteTitleInput = document.getElementById("noteTitle");
-  const noteTagsInput = document.getElementById("noteTags");
-  const deleteNoteBtn = document.getElementById("deleteNoteBtn");
-  const exportNoteBtn = document.getElementById("exportNoteBtn");
-  const notesList = document.getElementById("notesList");
+export async function handleSaveNote(showNotification: boolean = true): Promise<void> {
+  const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
+  const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
+  const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
+  const deleteNoteBtn = document.getElementById("deleteNoteBtn") as HTMLElement;
+  const exportNoteBtn = document.getElementById("exportNoteBtn") as HTMLElement;
+  const notesList = document.getElementById("notesList") as HTMLElement;
 
   addNoteBtn.disabled = true;
   const title =
@@ -53,7 +54,7 @@ export async function handleSaveNote(showNotification = true) {
   const tags = validateTags(tagsInput);
   const category = inferCategory(tags);
   const currentDate = new Date().toISOString().split("T")[0];
-  const note = { title, content, tags, date: currentDate, category };
+  const note: Note = { title, content, tags, date: currentDate, category };
 
   try {
     if (currentEditingNoteId !== null) {
@@ -68,15 +69,13 @@ export async function handleSaveNote(showNotification = true) {
       deleteNoteBtn.style.display = "inline-block";
       exportNoteBtn.style.display = "inline-block";
     }
-    // Note: loadAndRenderNotes is in main.js, so we'll call it from there
-    if (currentEditingNoteId !== null) {
+    // Note: loadAndRenderNotes is in main, so we'll call it from there
       notesList.querySelectorAll(".note-list-item").forEach((item) => {
         item.classList.toggle(
           "active",
-          parseInt(item.dataset.id) === currentEditingNoteId
+          parseInt((item as HTMLElement).dataset.id!) === currentEditingNoteId
         );
       });
-    }
   } catch (error) {
     showToast("Error saving note.", "error");
     throw error;
@@ -85,34 +84,34 @@ export async function handleSaveNote(showNotification = true) {
   }
 }
 
-export async function handleDeleteNote(id) {
+export async function handleDeleteNote(id: number): Promise<void> {
   try {
     lastDeletedNote = await dbGetNoteById(id);
     await dbDeleteNote(id);
     clearEditor();
     setCurrentEditingNoteId(null);
-    // showEmptyState("main") from ui.js
+    // showEmptyState("main") from ui
     const undoToast = showToast(
       'Note deleted. <button onclick="event.stopPropagation(); undoDelete()">Undo</button>',
       "success",
       10000
     );
-    window.currentUndoToast = undoToast;
+    (window as any).currentUndoToast = undoToast;
   } catch (error) {
     showToast("Error deleting note.", "error");
   }
 }
 
-export async function undoDelete() {
-  if (typeof window.currentUndoToast === "function") {
-    window.currentUndoToast();
-    window.currentUndoToast = null;
+export async function undoDelete(): Promise<number | undefined> {
+  if (typeof (window as any).currentUndoToast === "function") {
+    (window as any).currentUndoToast();
+    (window as any).currentUndoToast = null;
   }
   if (lastDeletedNote) {
     try {
       const newId = await dbAddNote(lastDeletedNote);
       lastDeletedNote.id = newId;
-      // openEditorForEdit(newId) from main.js
+      // openEditorForEdit(newId) from main
       showToast("Note restored.", "success");
       return newId;
     } catch (error) {
@@ -121,7 +120,7 @@ export async function undoDelete() {
   }
 }
 
-export async function handleExport(format = "json") {
+export async function handleExport(format: string = "json"): Promise<void> {
   if (currentEditingNoteId === null) {
     showToast("No note selected to export.", "error");
     return;
@@ -132,7 +131,7 @@ export async function handleExport(format = "json") {
       showToast("Note not found.", "error");
       return;
     }
-    let blob, filename, mimeType;
+    let blob: Blob, filename: string, mimeType: string;
     if (format === "md") {
       const title = note.title ? `# ${note.title}\n\n` : "";
       const tags =
@@ -181,23 +180,28 @@ export async function handleExport(format = "json") {
   }
 }
 
-export async function handleImport(event) {
-  const file = event.target.files[0];
+export async function handleImport(event: Event): Promise<number | undefined> {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = async (e) => {
+  reader.onload = async (e: ProgressEvent<FileReader>) => {
     try {
-      let note;
+      let note: Note;
       if (file.name.endsWith(".json")) {
-        note = JSON.parse(e.target.result);
-        if (!note.content || typeof note.content !== "string") {
+        const parsed = JSON.parse(e.target!.result as string);
+        if (!parsed.content || typeof parsed.content !== "string") {
           throw new Error("Invalid JSON format: content is required");
         }
-        note.title = note.title || file.name.replace(".json", "");
-        note.tags = Array.isArray(note.tags) ? note.tags : [];
-        note.category = note.category || inferCategory(note.tags);
+        note = {
+          title: parsed.title || file.name.replace(".json", ""),
+          content: parsed.content,
+          tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+          date: parsed.date || new Date().toISOString().split("T")[0],
+          category: parsed.category || inferCategory(parsed.tags || []),
+        };
       } else {
-        const lines = e.target.result.split("\n");
+        const lines = (e.target!.result as string).split("\n");
         let title = file.name.replace(/\.[^/.]+$/, "");
         let contentStart = 0;
         if (lines[0]?.startsWith("# ")) {
@@ -213,18 +217,18 @@ export async function handleImport(event) {
         };
       }
       const newId = await dbAddNote(note);
-      // openEditorForEdit(newId) from main.js
+      // openEditorForEdit(newId) from main
       showToast("Note imported successfully!", "success");
       return newId;
     } catch (error) {
-      showToast(`Error importing note: ${error.message}`, "error");
+      showToast(`Error importing note: ${(error as Error).message}`, "error");
     }
-    event.target.value = "";
+    target.value = "";
   };
   reader.readAsText(file);
 }
 
-export async function openEditorForAdd() {
+export async function openEditorForAdd(): Promise<void> {
   setCurrentEditingNoteId(null);
   clearEditor();
   showEditor();
@@ -238,14 +242,14 @@ export async function openEditorForAdd() {
   }, 0);
 
   untitledNoteCount = maxNumber + 1;
-  const noteTitleInput = document.getElementById("noteTitle");
+  const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
   noteTitleInput.value = `Untitled ${untitledNoteCount}`;
   setEditorContent("");
   enableEditor();
   setTimeout(() => focusEditor(), 100);
 }
 
-export async function openEditorForEdit(id) {
+export async function openEditorForEdit(id: number): Promise<void> {
   try {
     const note = await dbGetNoteById(id);
     if (!note) {
@@ -254,11 +258,11 @@ export async function openEditorForEdit(id) {
     }
     currentEditingNoteId = id;
     showEditor();
-    const noteTitleInput = document.getElementById("noteTitle");
-    const noteTagsInput = document.getElementById("noteTags");
-    const deleteNoteBtn = document.getElementById("deleteNoteBtn");
-    const exportNoteBtn = document.getElementById("exportNoteBtn");
-    const notesList = document.getElementById("notesList");
+    const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
+    const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
+    const deleteNoteBtn = document.getElementById("deleteNoteBtn") as HTMLElement;
+    const exportNoteBtn = document.getElementById("exportNoteBtn") as HTMLElement;
+    const notesList = document.getElementById("notesList") as HTMLElement;
 
     noteTitleInput.value = note.title || "";
     noteTagsInput.value = note.tags ? note.tags.join(", ") : "";
@@ -267,7 +271,7 @@ export async function openEditorForEdit(id) {
     deleteNoteBtn.style.display = "inline-block";
     exportNoteBtn.style.display = "inline-block";
     notesList.querySelectorAll(".note-list-item").forEach((item) => {
-      item.classList.toggle("active", parseInt(item.dataset.id) === id);
+      item.classList.toggle("active", parseInt((item as HTMLElement).dataset.id!) === id);
     });
     scrollToActiveNote();
   } catch (error) {
@@ -276,4 +280,4 @@ export async function openEditorForEdit(id) {
 }
 
 // Expose functions to window for HTML onclick attributes
-window.undoDelete = undoDelete;
+(window as any).undoDelete = undoDelete;
