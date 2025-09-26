@@ -1,0 +1,603 @@
+@import "../node_modules/tiny-markdown-editor/dist/tiny-mde.css";
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-bg: linear-gradient(135deg, #181d21 0%, #1b2e35 100%);
+    --text-color: #e0e0e0;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --accent-color: #007bff;
+    --accent-gradient: linear-gradient(45deg, #007bff, #00c6ff);
+    --error-color: rgba(220, 53, 69, 0.8);
+    --success-color: rgba(40, 167, 69, 0.8);
+}
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background: var(--primary-bg);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.app-container {
+    display: flex;
+    height: calc(100vh - 16px);
+    width: 100vw;
+    overflow: hidden;
+    padding: 8px 0;
+}
+
+.sidebar {
+    width: 250px;
+    background: var(--primary-bg);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    color: var(--text-color);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    margin: 8px 0 8px 0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: width 0.3s ease;
+}
+
+.sidebar-title {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-title h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background-image: var(--accent-gradient);
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.sidebar-toggle {
+    display: block;
+    padding: 10px;
+    background: var(--accent-gradient);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 8px;
+    border-radius: 6px;
+}
+
+.sidebar.collapsed {
+    width: 60px;
+    overflow: hidden;
+}
+
+.sidebar.collapsed .sidebar-title,
+.sidebar.collapsed .new-note-container,
+.sidebar.collapsed .search-container,
+.sidebar.collapsed .controls,
+.sidebar.collapsed .notes-list {
+    display: none;
+}
+
+.new-note-container {
+    padding: 0 1rem 1rem 1rem;
+}
+
+.search-container {
+    position: relative;
+    margin-bottom: 1rem;
+    padding: 0 1rem;
+}
+
+.search-box {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.search-box:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(0, 123, 255, 0.3);
+}
+
+.controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0 1rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+.btn:hover {
+    background: rgba(0, 123, 255, 0.2);
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
+.btn.active {
+    background: var(--accent-gradient);
+    border-color: transparent;
+    color: white;
+}
+
+.add-note-btn {
+    background: var(--accent-gradient);
+    border-color: transparent;
+    color: white;
+    min-width: 215px;
+    transition: all 0.2s ease;
+}
+
+.add-note-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: linear-gradient(45deg, rgba(0, 123, 255, 0.6), rgba(0, 198, 255, 0.6));
+    transform: none;
+}
+
+.add-note-btn:disabled::after {
+    content: ' ⏳';
+    font-size: 0.8em;
+}
+
+.add-note-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.notes-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    padding-bottom: 1rem;
+}
+
+.note-list-item {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.note-list-item.active {
+    border: 1px solid rgba(58, 123, 213, 0.7);
+    background: rgba(58, 123, 213, 0.1);
+    scroll-margin: 1rem;
+}
+
+.note-list-item .note-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(45deg, #3a7bd5, #00d1b2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.note-list-item .note-preview {
+    font-size: 0.85rem;
+    color: #b0b0b0;
+    line-height: 1.4;
+    margin: 0.25rem 0;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+.note-list-item .note-date {
+    font-size: 0.7rem;
+    color: #666;
+    margin-top: 0.5rem;
+}
+
+.note-list-item:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(0, 123, 255, 0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--primary-bg);
+    color: var(--text-color);
+    margin: 8px 8px 8px 0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.editor-area {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+}
+
+.editor-area input[type="text"] {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.editor-area input[type="text"]#noteTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+#tinymde-editor {
+    flex: 1;
+    min-height: 300px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.TinyMDE {
+    display: flex;
+    flex-direction: column;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-color) !important;
+    font-family: inherit !important;
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.TMCommandBar {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 0.5rem !important;
+    border-radius: 8px 8px 0 0 !important;
+    display: flex !important;
+    visibility: visible !important;
+}
+
+.TMCommandButton {
+    background: transparent !important;
+    border: none !important;
+    color: white !important;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.TMCommandButton svg {
+    fill: white !important;
+}
+
+.TMCommandButton:hover {
+    opacity: 1;
+}
+
+.TMCommandButton_Active {
+    color: white !important;
+    opacity: 1;
+}
+
+.editor-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.delete-note-btn {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.delete-note-btn:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-dropdown-content {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background-color: #2a3a42;
+    min-width: 200px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    z-index: 1000;
+    margin-bottom: 5px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transform-origin: bottom center;
+    transition: all 0.2s ease;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+}
+
+.export-dropdown:hover .export-dropdown-content {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.export-dropdown-content button {
+    width: 100%;
+    padding: 12px 16px;
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.export-dropdown-content button:hover {
+    background-color: rgba(0, 123, 255, 0.2);
+    color: #fff;
+}
+
+.export-btn span {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 0.7em;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.export-dropdown:hover .export-btn span {
+    transform: rotate(180deg);
+}
+
+.import-container button {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+.import-container button:hover {
+    background: rgba(0, 123, 255, 0.2);
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
+.import-container input[type="file"] {
+    display: none;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.saving-indicator {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 1000;
+}
+
+.saving-indicator.visible {
+    display: flex;
+}
+
+.saving-indicator .spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 300px;
+}
+
+.toast {
+    padding: 12px 20px;
+    border-radius: 4px;
+    color: white;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.error {
+    background-color: #ff4444;
+}
+
+.toast.success {
+    background-color: #00C851;
+}
+
+.toast.warning {
+    background-color: #ffbb33;
+}
+
+.toast button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.pagination-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 0.85em;
+    min-width: 70px;
+}
+
+.pagination-btn:not(:disabled):hover {
+    background: rgba(0, 123, 255, 0.2);
+    border-color: var(--accent-color);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.page-info {
+    color: #666;
+    min-width: 80px;
+    text-align: center;
+    font-size: 0.9em;
+    padding: 0 8px;
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        max-height: 40vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar.collapsed {
+        max-height: 60px;
+        width: 100%;
+    }
+
+    .main-content {
+        width: 100%;
+        flex: none;
+    }
+}
