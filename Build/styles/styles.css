@@ -1,5 +1,5 @@
-@import "../node_modules/tiny-markdown-editor/dist/tiny-mde.css";
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+@import url("https://unpkg.com/tiny-markdown-editor/dist/tiny-mde.min.css");
+@import url('https://unpkg.com/lucide@latest/dist/umd/lucide.css');
 
 * {
     margin: 0;
@@ -7,14 +7,37 @@
     box-sizing: border-box;
 }
 
+
 :root {
-    --primary-bg: linear-gradient(135deg, #181d21 0%, #1b2e35 100%);
-    --text-color: #e0e0e0;
-    --border-color: rgba(255, 255, 255, 0.1);
+    --primary-bg: linear-gradient(135deg, #0a0f14 0%, #1a2332 50%, #0f1419 100%);
+    --text-color: #ffffff;
+    --secondary-text: #a1a1aa;
+    --border-color: rgba(255, 255, 255, 0.15);
+    --accent-color: #004084;
+    --accent-gradient: linear-gradient(45deg, #004084, #006b89);
+    --error-color: rgba(239, 68, 68, 0.9);
+    --success-color: rgba(34, 197, 94, 0.9);
+    --bg-overlay: rgba(255, 255, 255, 0.08);
+    --bg-overlay-hover: rgba(255, 255, 255, 0.15);
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --input-bg: rgba(255, 255, 255, 0.08);
+    --panel-bg: rgba(15, 23, 42, 0.95);
+}
+
+[data-theme="light"] {
+    --primary-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+    --text-color: #0f172a;
+    --secondary-text: #64748b;
+    --border-color: rgba(0, 0, 0, 0.15);
     --accent-color: #007bff;
     --accent-gradient: linear-gradient(45deg, #007bff, #00c6ff);
-    --error-color: rgba(220, 53, 69, 0.8);
-    --success-color: rgba(40, 167, 69, 0.8);
+    --error-color: rgba(220, 38, 38, 0.9);
+    --success-color: rgba(22, 163, 74, 0.9);
+    --bg-overlay: rgba(0, 0, 0, 0.06);
+    --bg-overlay-hover: rgba(0, 0, 0, 0.12);
+    --shadow-color: rgba(0, 0, 0, 0.15);
+    --input-bg: rgba(255, 255, 255, 0.95);
+    --panel-bg: rgba(255, 255, 255, 0.9);
 }
 
 body,
@@ -39,23 +62,30 @@ html {
 
 .sidebar {
     width: 250px;
-    background: var(--primary-bg);
-    border-right: 1px solid var(--border-color);
+    background: var(--panel-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-left: none;
     display: flex;
+    padding-right: 10px;
     flex-direction: column;
     height: 100%;
     overflow-y: auto;
     color: var(--text-color);
-    border-top-right-radius: 12px;
-    border-bottom-right-radius: 12px;
-    margin: 8px 0 8px 0;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    margin: 8px 12px 8px 0;
+    box-shadow: 2px 0 10px var(--shadow-color);
     transition: width 0.3s ease;
 }
 
-.sidebar-title {
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .sidebar-title h1 {
@@ -67,17 +97,66 @@ html {
     background-clip: text;
 }
 
-.sidebar-toggle {
-    display: block;
-    padding: 10px;
-    background: var(--accent-gradient);
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-size: 0.9rem;
+.theme-toggle-container {
+    padding: 0 1rem 1rem 1rem;
     text-align: center;
-    margin: 8px;
+}
+
+.theme-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-overlay);
+    border: 2px solid var(--border-color);
     border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+.sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.95rem;
+    text-align: center;
+    transition: background 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+    margin: 0;
+    width: auto;
+    background: transparent;
+    border: none;
+    min-width: unset;
+    max-width: unset;
+}
+
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(0, 123, 255, 0.2);
+    border-color: var(--accent-color);
 }
 
 .sidebar.collapsed {
@@ -85,12 +164,180 @@ html {
     overflow: hidden;
 }
 
-.sidebar.collapsed .sidebar-title,
-.sidebar.collapsed .new-note-container,
-.sidebar.collapsed .search-container,
-.sidebar.collapsed .controls,
-.sidebar.collapsed .notes-list {
+.sidebar.collapsed .sidebar-title {
     display: none;
+}
+
+.sidebar.collapsed .settings-container {
+}
+.settings-container {
+    position: relative;
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+.settings-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-overlay);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
+    text-align: left;
+}
+
+.settings-toggle:hover {
+    background: var(--bg-overlay-hover);
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
+.settings-toggle i {
+    width: 1em;
+    height: 1em;
+}
+
+.settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.settings-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.settings-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    max-width: 80vw;
+    height: 100vh;
+    background: var(--panel-bg);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-color);
+    /* Only round the inward facing corners (top-right, bottom-right) */
+    border-radius: 0 20px 20px 0;
+    box-shadow: 4px 0 20px var(--shadow-color);
+    z-index: 1001;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    padding: 2rem 1.5rem;
+    overflow-y: auto;
+}
+
+.settings-panel.active {
+    transform: translateX(0);
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.settings-close {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.settings-close:hover {
+    background: var(--bg-overlay);
+}
+
+.settings-content {
+    flex: 1;
+}
+
+.setting-item {
+    margin-bottom: 1.5rem;
+}
+
+.setting-item:last-child {
+    margin-bottom: 0;
+}
+
+.setting-item label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+}
+
+.theme-options {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--primary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+}
+
+.theme-option:hover {
+    background: var(--bg-overlay-hover);
+    border-color: var(--accent-color);
+}
+
+.theme-option.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: var(--text-color);
+    stroke: var(--text-color);
+}
+
+.theme-option.active i,
+.theme-option.active lucide-icon,
+.theme-option.active i[data-lucide] {
+    stroke: var(--text-color);
+    background: var(--accent-color);
+}
+
+.theme-option svg {
+    stroke: var(--text-color);
+    fill: none;
 }
 
 .new-note-container {
@@ -107,7 +354,7 @@ html {
     width: 100%;
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--input-bg);
     border: 2px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-color);
@@ -130,7 +377,7 @@ html {
 
 .btn {
     padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-overlay);
     border: 2px solid var(--border-color);
     border-radius: 6px;
     color: var(--text-color);
@@ -192,7 +439,7 @@ html {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     margin: 0.5rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-overlay);
     min-height: 100px;
     display: flex;
     flex-direction: column;
@@ -222,9 +469,17 @@ html {
     max-width: 100%;
 }
 
+.pin-icon {
+    width: 14px;
+    height: 14px;
+    margin-left: 4px;
+    vertical-align: middle;
+    opacity: 0.7;
+}
+
 .note-list-item .note-preview {
     font-size: 0.85rem;
-    color: #b0b0b0;
+    color: var(--secondary-text);
     line-height: 1.4;
     margin: 0.25rem 0;
     display: -webkit-box;
@@ -237,14 +492,15 @@ html {
 
 .note-list-item .note-date {
     font-size: 0.7rem;
-    color: #666;
+    color: var(--secondary-text);
+    opacity: 0.7;
     margin-top: 0.5rem;
 }
 
 .note-list-item:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(0, 123, 255, 0.3);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    background: var(--bg-overlay-hover);
+    border-color: rgba(79, 70, 229, 0.3);
+    box-shadow: 0 5px 15px var(--shadow-color);
 }
 
 .main-content {
@@ -253,10 +509,14 @@ html {
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-    background: var(--primary-bg);
+    background: var(--panel-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
     color: var(--text-color);
     margin: 8px 8px 8px 0;
-    border-radius: 12px;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+    box-shadow: -2px 0 10px var(--shadow-color);
     overflow: hidden;
 }
 
@@ -264,24 +524,51 @@ html {
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 1rem;
+    padding: 1.5rem 1.5rem 1.5rem 0.5rem;
 }
 
 .editor-area input[type="text"] {
     width: 100%;
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--input-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-color);
     font-family: inherit;
     font-size: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
+}
+
+.editor-area select {
+    width: 100%;
+    padding: 1rem;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+}
+
+.pin-container {
+    text-align: left;
+}
+
+.pin-btn {
+    background: var(--bg-overlay);
+    border: 2px solid var(--border-color);
+}
+
+.pin-btn.pinned {
+    background: #ffd700;
+    color: #000;
 }
 
 .editor-area input[type="text"]#noteTitle {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 600;
+    padding: 1.2rem;
 }
 
 #tinymde-editor {
@@ -297,36 +584,36 @@ html {
 .TinyMDE {
     display: flex;
     flex-direction: column;
-    background: transparent !important;
-    border: none !important;
-    color: var(--text-color) !important;
-    font-family: inherit !important;
-    font-size: 1rem !important;
-    line-height: 1.6 !important;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 1.1rem;
+    line-height: 1.7;
     flex-grow: 1;
     overflow-y: auto;
-    padding: 10px;
+    padding: 1.2rem;
 }
 
 .TMCommandBar {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    padding: 0.5rem !important;
-    border-radius: 8px 8px 0 0 !important;
-    display: flex !important;
-    visibility: visible !important;
+    background: rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.5rem;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    visibility: visible;
 }
 
 .TMCommandButton {
-    background: transparent !important;
-    border: none !important;
-    color: white !important;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
     opacity: 0.8;
     transition: opacity 0.2s ease;
 }
 
 .TMCommandButton svg {
-    fill: white !important;
+    fill: var(--text-color);
 }
 
 .TMCommandButton:hover {
@@ -334,7 +621,7 @@ html {
 }
 
 .TMCommandButton_Active {
-    color: white !important;
+    color: var(--text-color);
     opacity: 1;
 }
 
@@ -365,9 +652,9 @@ html {
     position: absolute;
     bottom: 100%;
     left: 0;
-    background-color: #2a3a42;
+    background: var(--panel-bg);
     min-width: 200px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 16px var(--shadow-color);
     border-radius: 8px;
     z-index: 1000;
     margin-bottom: 5px;
@@ -446,7 +733,7 @@ html {
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
-    color: #666;
+    color: var(--secondary-text);
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -568,15 +855,177 @@ html {
 .pagination-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-overlay);
 }
 
 .page-info {
-    color: #666;
+    color: var(--secondary-text);
     min-width: 80px;
     text-align: center;
     font-size: 0.9em;
     padding: 0 8px;
+}
+
+/* Lucide Icon Styling */
+lucide-icon,
+i[data-lucide] {
+    width: 0.75em;
+    height: 0.75em;
+    display: inline-block;
+    vertical-align: middle;
+    stroke: var(--text-color);
+    stroke-width: 2;
+    fill: none;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+}
+
+lucide-icon svg,
+i[data-lucide] svg {
+    stroke: var(--text-color);
+    fill: none;
+}
+
+/* Smooth icon animations */
+lucide-icon {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:active lucide-icon,
+.btn:active i[data-lucide] {
+    transform: scale(0.95);
+}
+
+/* Loading animation for icons */
+@keyframes icon-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.btn:disabled lucide-icon,
+.btn:disabled i[data-lucide] {
+    animation: icon-pulse 1.5s ease-in-out infinite;
+}
+
+/* Specific icon sizes and styles */
+.sidebar-toggle lucide-icon,
+.sidebar-toggle i[data-lucide] {
+    width: 0.9em;
+    height: 0.9em;
+}
+
+.theme-toggle-btn lucide-icon,
+.theme-toggle-btn i[data-lucide] {
+    width: 1.5em;
+    height: 1.5em;
+}
+
+.pin-btn lucide-icon,
+.pin-icon {
+    width: 0.5em;
+    height: 0.5em;
+    stroke-width: 2.5;
+}
+
+.import-container lucide-icon,
+.import-container i[data-lucide] {
+    width: 0.8em;
+    height: 0.8em;
+    margin-right: 0.3em;
+}
+
+.export-btn lucide-icon,
+.export-btn i[data-lucide] {
+    width: 0.7em;
+    height: 0.7em;
+    margin-left: 0.3em;
+}
+
+/* Icon hover effects */
+.btn:hover lucide-icon,
+.btn:hover i[data-lucide] {
+    stroke: var(--accent-color);
+    transform: scale(1.05);
+}
+
+.theme-toggle-btn:hover lucide-icon,
+.theme-toggle-btn:hover i[data-lucide] {
+    filter: drop-shadow(0 0 4px var(--accent-color));
+}
+
+.pin-btn:hover lucide-icon,
+.pin-btn:hover i[data-lucide] {
+    stroke: #ffd700;
+    filter: drop-shadow(0 0 3px #ffd700);
+}
+
+.pin-btn.pinned lucide-icon,
+.pin-btn.pinned i[data-lucide] {
+    fill: #ffd700;
+    stroke: #ffd700;
+}
+
+/* Note list pin icon styling */
+.note-list-item .pin-icon {
+    margin-left: 0.5em;
+    opacity: 0.8;
+    stroke: #ffd700;
+    fill: #ffd700;
+}
+
+/* Button focus states for accessibility */
+.btn:focus lucide-icon,
+.btn:focus i[data-lucide] {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Dark theme adjustments */
+[data-theme="light"] lucide-icon,
+[data-theme="light"] i[data-lucide] {
+    stroke: var(--text-color);
+}
+
+[data-theme="light"] .note-list-item .pin-icon {
+    stroke: #b8860b;
+    /* Darker gold for light theme */
+    fill: #b8860b;
+}
+
+[data-theme="light"] .pin-btn.pinned lucide-icon,
+[data-theme="light"] .pin-btn.pinned i[data-lucide] {
+    fill: #b8860b;
+    stroke: #b8860b;
+}
+
+[data-theme="light"] .pin-btn:hover lucide-icon,
+[data-theme="light"] .pin-btn:hover i[data-lucide] {
+    stroke: #b8860b;
+    filter: drop-shadow(0 0 3px #b8860b);
+}
+
+/* Responsive icon sizing */
+@media (max-width: 768px) {
+
+    lucide-icon,
+    i[data-lucide] {
+        width: 0.8em;
+        height: 0.8em;
+    }
+
+    .sidebar-toggle lucide-icon,
+    .sidebar-toggle i[data-lucide] {
+        width: 0.9em;
+        height: 0.9em;
+    }
 }
 
 @media (max-width: 768px) {
@@ -589,6 +1038,12 @@ html {
         max-height: 40vh;
         border-right: none;
         border-bottom: 1px solid var(--border-color);
+        border-left: 1px solid var(--border-color);
+        border-top: 1px solid var(--border-color);
+        border-top-right-radius: 0;
+        border-top-left-radius: 0;
+        border-bottom-right-radius: 20px;
+        border-bottom-left-radius: 20px;
     }
 
     .sidebar.collapsed {
@@ -599,5 +1054,47 @@ html {
     .main-content {
         width: 100%;
         flex: none;
+        border-top: 1px solid var(--border-color);
+        border-left: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+        border-bottom: none;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .settings-panel {
+        width: 280px;
+        max-width: 90vw;
+        padding: 1.5rem 1rem;
+    }
+
+    .settings-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .settings-title {
+        font-size: 1.3rem;
+    }
+
+    .settings-container {
+        padding: 0.75rem;
+    }
+
+    .settings-toggle {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .theme-options {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .theme-option {
+        justify-content: flex-start;
+        padding: 0.5rem;
+        font-size: 0.85rem;
     }
 }

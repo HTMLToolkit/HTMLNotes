@@ -36,19 +36,34 @@ export function setAllNotesCache(notes: Note[]): void {
 export function renderFilterButtons(): void {
   const filterControls = document.getElementById("filterControls")!;
   const existingButtons = filterControls.querySelectorAll(
-    '.btn:not([data-filter="all"]):not([data-filter="recent"])'
+    '.btn:not([data-filter="all"]):not([data-filter="recent"]):not([data-filter="pinned"])'
   );
   existingButtons.forEach((btn) => btn.remove());
 
   const allTags = new Set<string>();
+  const allCategories = new Set<string>();
   allNotesCache.forEach((note) => {
     if (note.tags && Array.isArray(note.tags)) {
       note.tags.forEach((tag) => allTags.add(tag.trim().toLowerCase()));
     }
+    if (note.category) {
+      allCategories.add(note.category.trim().toLowerCase());
+    }
   });
 
   const sortedTags = Array.from(allTags).sort();
+  const sortedCategories = Array.from(allCategories).sort();
   const fragment = document.createDocumentFragment();
+  sortedCategories.forEach((category) => {
+    if (category) {
+      const button = document.createElement("button");
+      button.classList.add("btn");
+      (button as HTMLElement).dataset.filter = category;
+      button.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+      button.setAttribute("aria-label", `Filter by ${category} category`);
+      fragment.appendChild(button);
+    }
+  });
   sortedTags.forEach((tag) => {
     if (tag) {
       const button = document.createElement("button");
@@ -79,13 +94,21 @@ export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | n
     const matchesFilter =
       currentFilter === "all" ||
       (currentFilter === "recent" && note.date && isRecent(note.date)) ||
+      (currentFilter === "pinned" && note.pinned) ||
       (note.tags &&
-        note.tags.some((tag) => tag.toLowerCase() === currentFilter));
+        note.tags.some((tag) => tag.toLowerCase() === currentFilter)) ||
+      (note.category && note.category.toLowerCase() === currentFilter);
     return matchesSearch && matchesFilter;
   });
 
   if (currentFilter !== "recent") {
-    filteredNotes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    filteredNotes.sort((a, b) => {
+      // Pinned notes come first
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      // Then sort by date
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
   }
 
   const start = (currentPage - 1) * PAGE_SIZE;
@@ -106,7 +129,7 @@ export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | n
                     }" data-id="${note.id}" role="listitem" tabindex="0">
                         <div class="note-title">${escapeHTML(
                           note.title || "Untitled"
-                        )}</div>
+                        )} ${note.pinned ? '<i data-lucide="pin" class="pin-icon"></i>' : ''}</div>
                         <div class="note-date">${
                           note.date ? formatDate(note.date) : "No date"
                         }</div>
@@ -124,6 +147,11 @@ export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | n
         openEditorForEdit(noteId);
       });
     });
+
+    // Re-create Lucide icons after DOM update
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   }
 
   const totalPages = Math.ceil(filteredNotes.length / PAGE_SIZE);

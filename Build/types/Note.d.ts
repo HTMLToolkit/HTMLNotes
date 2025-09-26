@@ -5,4 +5,5 @@ interface Note {
   tags: string[];
   date: string;
   category: string;
+  pinned?: boolean;
 }

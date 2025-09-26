@@ -6,20 +6,22 @@
     <title>HTMLNotes</title>
     <link rel="stylesheet" href="./styles/styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
+    <script>
+      eruda.init();
+    </script>
     <script src="https://unpkg.com/tiny-markdown-editor@0.2.3/dist/tiny-mde.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   </head>
   <body>
     <div class="app-container">
       <div class="sidebar">
-        <button
-          class="sidebar-toggle"
-          aria-label="Toggle sidebar"
-        >
-          ☰
-        </button>
-        <div class="sidebar-title">
-          <h1>HTMLNotes</h1>
+        <div class="sidebar-header">
+          <div class="sidebar-title">
+            <h1>HTMLNotes</h1>
+          </div>
+          <button class="sidebar-toggle" aria-label="Toggle sidebar">
+            <i data-lucide="menu"></i>
+          </button>
         </div>
         <div class="new-note-container">
           <button
@@ -55,11 +57,53 @@
           >
             Recent
           </button>
+          <button
+            class="btn"
+            data-filter="pinned"
+            aria-label="Show pinned notes"
+          >
+            Pinned
+          </button>
         </div>
         <div class="notes-list" id="notesList" role="list"></div>
         <div class="empty-state" id="sidebarEmptyState" style="display: none">
           <h3>No notes found</h3>
           <p>Create a new note or adjust your search/filters.</p>
+        </div>
+        <div class="settings-container">
+          <button class="settings-toggle" id="settingsToggle">
+            <i data-lucide="settings"></i>
+            <span>Settings</span>
+          </button>
+        </div>
+      </div>
+      <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-panel" id="settingsPanel">
+          <div class="settings-header">
+            <h2 class="settings-title">Settings</h2>
+            <button class="settings-close" id="settingsClose">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <div class="settings-content">
+            <div class="setting-item">
+              <label>Theme:</label>
+              <div class="theme-options">
+                <button class="theme-option" data-theme="light">
+                  <i data-lucide="sun"></i>
+                  Light
+                </button>
+                <button class="theme-option" data-theme="dark">
+                  <i data-lucide="moon"></i>
+                  Dark
+                </button>
+                <button class="theme-option" data-theme="auto">
+                  <i data-lucide="monitor"></i>
+                  Auto
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="main-content" id="mainContent">
@@ -78,7 +122,20 @@
             placeholder="Tags (comma separated)..."
             aria-label="Note tags"
           />
+          <select id="noteCategory" aria-label="Note category">
+            <option value="">Select category...</option>
+            <option value="personal">Personal</option>
+            <option value="work">Work</option>
+            <option value="ideas">Ideas</option>
+            <option value="todo">To Do</option>
+            <option value="learning">Learning</option>
+          </select>
           <div class="editor-buttons">
+            <div class="pin-container">
+              <button class="btn pin-btn" id="pinNoteBtn" aria-label="Pin note">
+                <i data-lucide="pin"></i> Pin Note
+              </button>
+            </div>
             <div class="export-dropdown">
               <button
                 class="btn export-btn"
@@ -87,7 +144,7 @@
                 aria-expanded="false"
                 aria-label="Export note"
               >
-                Export Note <span>▼</span>
+                Export Note <i data-lucide="chevron-down"></i>
               </button>
               <div class="export-dropdown-content" role="menu">
                 <button id="exportJsonBtn" role="menuitem">
@@ -100,7 +157,7 @@
             </div>
             <div class="import-container">
               <button class="btn" id="importNoteBtn" aria-label="Import note">
-                <i class="fas fa-file-import"></i> Import Note
+                <i data-lucide="upload"></i> Import Note
               </button>
               <input type="file" id="importFileInput" accept=".json,.md,.txt" />
             </div>

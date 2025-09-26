@@ -8,7 +8,7 @@ import {
   getNoteById as dbGetNoteById,
 } from "./database";
 import { showToast } from "./notifications";
-import { showEditor, clearEditor, scrollToActiveNote } from "./ui";
+import { showEditor, clearEditor, scrollToActiveNote, updatePinButton } from "./ui";
 import {
   setEditorContent,
   getEditorContent,
@@ -16,6 +16,7 @@ import {
   focusEditor,
 } from "./editor";
 import { validateTags, inferCategory } from "./utils";
+import { setAllNotesCache as setRenderingNotesCache, renderNotesList } from "./rendering";
 
 let currentEditingNoteId: number | null = null;
 let lastDeletedNote: Note | undefined = undefined;
@@ -42,6 +43,7 @@ export async function handleSaveNote(showNotification: boolean = true): Promise<
   const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
   const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
   const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
+  const noteCategorySelect = document.getElementById("noteCategory") as HTMLSelectElement;
   const deleteNoteBtn = document.getElementById("deleteNoteBtn") as HTMLElement;
   const exportNoteBtn = document.getElementById("exportNoteBtn") as HTMLElement;
   const notesList = document.getElementById("notesList") as HTMLElement;
@@ -52,7 +54,7 @@ export async function handleSaveNote(showNotification: boolean = true): Promise<
   const content = getEditorContent();
   const tagsInput = noteTagsInput.value.trim();
   const tags = validateTags(tagsInput);
-  const category = inferCategory(tags);
+  const category = noteCategorySelect.value || inferCategory(tags);
   const currentDate = new Date().toISOString().split("T")[0];
   const note: Note = { title, content, tags, date: currentDate, category };
 
@@ -69,13 +71,18 @@ export async function handleSaveNote(showNotification: boolean = true): Promise<
       deleteNoteBtn.style.display = "inline-block";
       exportNoteBtn.style.display = "inline-block";
     }
-    // Note: loadAndRenderNotes is in main, so we'll call it from there
-      notesList.querySelectorAll(".note-list-item").forEach((item) => {
-        item.classList.toggle(
-          "active",
-          parseInt((item as HTMLElement).dataset.id!) === currentEditingNoteId
-        );
-      });
+    // Update cache and re-render
+    if (currentEditingNoteId !== null) {
+      const index = allNotesCache.findIndex(n => n.id === currentEditingNoteId);
+      if (index !== -1) {
+        allNotesCache[index] = { ...note };
+      }
+    } else {
+      allNotesCache.push(note);
+      allNotesCache.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+    setRenderingNotesCache(allNotesCache);
+    renderNotesList();
   } catch (error) {
     showToast("Error saving note.", "error");
     throw error;
@@ -88,6 +95,10 @@ export async function handleDeleteNote(id: number): Promise<void> {
   try {
     lastDeletedNote = await dbGetNoteById(id);
     await dbDeleteNote(id);
+    // Remove from cache
+    allNotesCache = allNotesCache.filter(n => n.id !== id);
+    setRenderingNotesCache(allNotesCache);
+    renderNotesList();
     clearEditor();
     setCurrentEditingNoteId(null);
     // showEmptyState("main") from ui
@@ -111,6 +122,11 @@ export async function undoDelete(): Promise<number | undefined> {
     try {
       const newId = await dbAddNote(lastDeletedNote);
       lastDeletedNote.id = newId;
+      // Add to cache
+      allNotesCache.push(lastDeletedNote);
+      allNotesCache.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setRenderingNotesCache(allNotesCache);
+      renderNotesList();
       // openEditorForEdit(newId) from main
       showToast("Note restored.", "success");
       return newId;
@@ -249,6 +265,29 @@ export async function openEditorForAdd(): Promise<void> {
   setTimeout(() => focusEditor(), 100);
 }
 
+export async function togglePinNote(id: number): Promise<void> {
+  try {
+    const note = await dbGetNoteById(id);
+    if (!note) {
+      showToast("Note not found.", "error");
+      return;
+    }
+    note.pinned = !note.pinned;
+    await dbUpdateNote(note);
+    // Update cache
+    const index = allNotesCache.findIndex(n => n.id === id);
+    if (index !== -1) {
+      allNotesCache[index] = { ...note };
+    }
+    setRenderingNotesCache(allNotesCache);
+    renderNotesList();
+    updatePinButton(note.pinned || false);
+    showToast(note.pinned ? "Note pinned." : "Note unpinned.", "success");
+  } catch (error) {
+    showToast("Error toggling pin.", "error");
+  }
+}
+
 export async function openEditorForEdit(id: number): Promise<void> {
   try {
     const note = await dbGetNoteById(id);
@@ -260,12 +299,15 @@ export async function openEditorForEdit(id: number): Promise<void> {
     showEditor();
     const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
     const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
+    const noteCategorySelect = document.getElementById("noteCategory") as HTMLSelectElement;
     const deleteNoteBtn = document.getElementById("deleteNoteBtn") as HTMLElement;
     const exportNoteBtn = document.getElementById("exportNoteBtn") as HTMLElement;
     const notesList = document.getElementById("notesList") as HTMLElement;
 
     noteTitleInput.value = note.title || "";
     noteTagsInput.value = note.tags ? note.tags.join(", ") : "";
+    noteCategorySelect.value = note.category || "";
+    updatePinButton(note.pinned || false);
     setEditorContent(note.content || "");
     enableEditor();
     deleteNoteBtn.style.display = "inline-block";
@@ -281,3 +323,6 @@ export async function openEditorForEdit(id: number): Promise<void> {
 
 // Expose functions to window for HTML onclick attributes
 (window as any).undoDelete = undoDelete;
+(window as any).togglePinNote = togglePinNote;
+(window as any).handleSaveNote = handleSaveNote;
+(window as any).getCurrentEditingNoteId = getCurrentEditingNoteId;
