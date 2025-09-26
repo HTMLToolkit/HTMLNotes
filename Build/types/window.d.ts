@@ -3,6 +3,12 @@ interface TinyMDE {
     CommandBar: any;
 }
 
+interface LucideAPI {
+    createIcons(): void;
+}
+
+declare var lucide: LucideAPI;
+
 interface Window {
     TinyMDE: TinyMDE;
 }

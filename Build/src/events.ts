@@ -28,6 +28,12 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
   const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
   const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
   const notesList = document.getElementById("notesList")!;
+  const settingsToggle = document.getElementById("settingsToggle") as HTMLButtonElement;
+  const settingsOverlay = document.getElementById("settingsOverlay") as HTMLElement;
+  const settingsPanel = document.getElementById("settingsPanel") as HTMLElement;
+  const settingsClose = document.getElementById("settingsClose") as HTMLButtonElement;
+  const themeOptions = document.querySelectorAll(".theme-option") as NodeListOf<HTMLButtonElement>;
+  const pinNoteBtn = document.getElementById("pinNoteBtn") as HTMLButtonElement;
 
   filterControls.addEventListener("click", (e: Event) => {
     const target = e.target as HTMLButtonElement;
@@ -46,6 +52,67 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
   searchInput.addEventListener("input", () => {
     setCurrentPage(1);
     renderNotesList(loadAndRenderCallback);
+  });
+  
+  settingsToggle.addEventListener("click", () => {
+    settingsOverlay.classList.add("active");
+    settingsPanel.classList.add("active");
+  });
+
+  settingsClose.addEventListener("click", () => {
+    settingsOverlay.classList.remove("active");
+    settingsPanel.classList.remove("active");
+  });
+
+  settingsOverlay.addEventListener("click", (e: Event) => {
+    if (e.target === settingsOverlay) {
+      settingsOverlay.classList.remove("active");
+      settingsPanel.classList.remove("active");
+    }
+  });
+
+  themeOptions.forEach(option => {
+    option.addEventListener("click", () => {
+      const selectedTheme = option.dataset.theme!;
+      let actualTheme = selectedTheme;
+      
+      if (selectedTheme === "auto") {
+        // Detect system preference for auto mode
+        actualTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      
+      document.documentElement.setAttribute("data-theme", actualTheme);
+      localStorage.setItem("theme", selectedTheme);
+      
+      // Update active state
+      themeOptions.forEach(opt => opt.classList.remove("active"));
+      option.classList.add("active");
+      
+      // Re-create icons after theme change
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    });
+  });
+
+  // Listen for system theme changes when in auto mode
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "auto") {
+      const actualTheme = e.matches ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", actualTheme);
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+  });
+
+  pinNoteBtn.addEventListener("click", () => {
+    const currentEditingNoteId = (window as any).getCurrentEditingNoteId();
+    if (currentEditingNoteId !== null) {
+      // Toggle pin status - this will be handled in notes.ts
+      (window as any).togglePinNote(currentEditingNoteId);
+    }
   });
 
   addNoteBtn.addEventListener("click", openEditorForAdd);
@@ -108,6 +175,34 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
   if (sidebarToggle) {
     sidebarToggle.addEventListener("click", toggleSidebar);
   }
+
+  // Keyboard shortcuts
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key.toLowerCase()) {
+        case "n":
+          e.preventDefault();
+          addNoteBtn.click();
+          break;
+        case "s":
+          e.preventDefault();
+          // Save is handled by autosave, but we can trigger it manually
+          (window as any).handleSaveNote();
+          break;
+        case "d":
+          e.preventDefault();
+          const currentId = (window as any).getCurrentEditingNoteId();
+          if (currentId !== null) {
+            handleDeleteNote(currentId);
+          }
+          break;
+        case "f":
+          e.preventDefault();
+          searchInput.focus();
+          break;
+      }
+    }
+  });
 }
 
 export function setupNavigation(loadAndRenderCallback: () => Promise<void>): void {
