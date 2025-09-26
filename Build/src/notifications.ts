@@ -1,7 +1,7 @@
-// notifications.js - Toast notifications
+// notifications.ts - Toast notifications
 
-export function showToast(message, type = "error", duration = 3000) {
-  const toastContainer = document.getElementById("toastContainer");
+export function showToast(message: string, type: string = "error", duration: number = 3000): () => void {
+  const toastContainer = document.getElementById("toastContainer")!;
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
   toast.innerHTML = message;

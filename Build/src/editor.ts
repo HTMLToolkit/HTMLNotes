@@ -1,15 +1,15 @@
-// editor.js - TinyMDE editor functions
+// editor.ts - TinyMDE editor functions
 const TinyMDE = window.TinyMDE;
 import { showToast } from "./notifications.js";
 import { showSavingIndicator, hideSavingIndicator } from "./ui.js";
 
-let tinyMdeEditor = null;
+let tinyMdeEditor: any = null;
 
-export function initializeTinyMDE(debounceCallback, attempts = 3) {
-  const editorContainer = document.getElementById("tinymde-editor");
+export function initializeTinyMDE(debounceCallback: () => void, attempts: number = 3): void {
+  const editorContainer = document.getElementById("tinymde-editor") as HTMLElement;
   if (!editorContainer) {
     if (attempts > 0) {
-      setTimeout(() => initializeTinyMDE(attempts - 1), 100);
+      setTimeout(() => initializeTinyMDE(debounceCallback, attempts - 1), 100);
       return;
     }
     showToast("Editor container not found.", "error");
@@ -51,20 +51,20 @@ export function initializeTinyMDE(debounceCallback, attempts = 3) {
       editor: tinyMdeEditor,
     });
 
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver((mutations: MutationRecord[]) => {
       if (
         mutations.some(
           (m) =>
             m.type === "childList" ||
             (m.type === "characterData" &&
-              m.target.parentNode?.closest(".TinyMDE"))
+              (m.target as Element).parentElement?.closest(".TinyMDE"))
         )
       ) {
-        if (!window.isSettingEditorContent) debounceCallback();
+        if (!(window as any).isSettingEditorContent) debounceCallback();
       }
     });
 
-    const editorContent = editorContainer.querySelector(".TinyMDE");
+    const editorContent = editorContainer.querySelector(".TinyMDE") as Element;
     if (editorContent) {
       observer.observe(editorContent, {
         childList: true,
@@ -72,54 +72,54 @@ export function initializeTinyMDE(debounceCallback, attempts = 3) {
         characterData: true,
       });
     }
-    window.editorObserver = observer;
+    (window as any).editorObserver = observer;
   } catch (error) {
     console.error("Error initializing TinyMDE:", error);
     showToast("Error initializing editor.", "error");
   }
 }
 
-export function setEditorContent(content) {
+export function setEditorContent(content: string): void {
   if (!tinyMdeEditor) return;
   try {
-    window.isSettingEditorContent = true;
+    (window as any).isSettingEditorContent = true;
     tinyMdeEditor.setContent(content || "");
-    setTimeout(() => (window.isSettingEditorContent = false), 100);
+    setTimeout(() => ((window as any).isSettingEditorContent = false), 100);
   } catch (error) {
     console.error("Error setting editor content:", error);
-    window.isSettingEditorContent = false;
+    (window as any).isSettingEditorContent = false;
   }
 }
 
-export function getEditorContent() {
+export function getEditorContent(): string {
   return tinyMdeEditor ? tinyMdeEditor.getContent().trim() : "";
 }
 
-export function enableEditor() {
+export function enableEditor(): void {
   if (tinyMdeEditor && typeof tinyMdeEditor.enable === "function") {
     tinyMdeEditor.enable();
   }
 }
 
-export function focusEditor() {
+export function focusEditor(): void {
   if (tinyMdeEditor && tinyMdeEditor.codemirror) {
     tinyMdeEditor.codemirror.focus();
   }
 }
 
-export function createDebounceAutosave(handleSaveNoteCallback) {
-  let timeout;
+export function createDebounceAutosave(handleSaveNoteCallback: (showNotification: boolean) => Promise<void>): () => void {
+  let timeout: number;
   let lastContent = "";
   let lastTitle = "";
   let lastTags = "";
-  let saveQueue = [];
+  let saveQueue: { currentContent: string; currentTitle: string; currentTags: string }[] = [];
   let isSaving = false;
 
   return () => {
     clearTimeout(timeout);
     const currentContent = getEditorContent();
-    const noteTitleInput = document.getElementById("noteTitle");
-    const noteTagsInput = document.getElementById("noteTags");
+    const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
+    const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
     const currentTitle = noteTitleInput ? noteTitleInput.value.trim() : "";
     const currentTags = noteTagsInput ? noteTagsInput.value.trim() : "";
 
@@ -135,7 +135,7 @@ export function createDebounceAutosave(handleSaveNoteCallback) {
     const processQueue = async () => {
       if (saveQueue.length === 0 || isSaving) return;
       isSaving = true;
-      const addNoteBtn = document.getElementById("addNoteBtn");
+      const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
       addNoteBtn.disabled = true;
       addNoteBtn.setAttribute("aria-disabled", "true");
       const timeoutId = setTimeout(() => {
@@ -147,10 +147,7 @@ export function createDebounceAutosave(handleSaveNoteCallback) {
         }
       }, 5000);
 
-      const { currentContent, currentTitle, currentTags } = saveQueue.shift();
-      const { showSavingIndicator, hideSavingIndicator } = await import(
-        "./ui.js"
-      );
+      const { currentContent, currentTitle, currentTags } = saveQueue.shift()!;
       showSavingIndicator();
       try {
         await handleSaveNoteCallback(false);
