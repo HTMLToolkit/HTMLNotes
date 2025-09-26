@@ -41,7 +41,7 @@ To run or modify HTMLNotes locally, follow these steps:
    ```
 
 3. **Include Dependencies**:
-   - **TinyMDE**: The Markdown editor is included via CDN in the `index.html` file. Ensure an internet connection for the CDN, or download the TinyMDE library locally from [https://github.com/nextapps-de/tinymde](https://github.com/nextapps-de/tinymde).
+   - **TinyMDE**: The Markdown editor is included via CDN in the `index.html` file. Ensure an internet connection for the CDN, or download the TinyMDE library locally from [https://github.com/jefago/tiny-markdown-editor](https://github.com/jefago/tiny-markdown-editor).
    - **Font Awesome**: Icons are included via CDN. Ensure an internet connection, or download Font Awesome locally from [https://fontawesome.com/](https://fontawesome.com/).
 
 4. **Open the Application**:
@@ -78,7 +78,7 @@ Please ensure your code follows the project's coding standards, respects TinyMDE
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 Note: TinyMDE and Font Awesome have their own licensing terms. TinyMDE is licensed under the MIT License, and Font Awesome offers free and pro versions with different licenses. Ensure compliance when using or distributing these dependencies.
 

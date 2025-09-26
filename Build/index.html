@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTMLNotes</title>
+    <link rel="stylesheet" href="./styles/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
+    <script src="https://unpkg.com/tiny-markdown-editor@0.2.3/dist/tiny-mde.min.js"></script>
+  </head>
+  <body>
+    <div class="app-container">
+      <div class="sidebar">
+        <button
+          class="sidebar-toggle"
+          aria-label="Toggle sidebar"
+        >
+          ☰
+        </button>
+        <div class="sidebar-title">
+          <h1>HTMLNotes</h1>
+        </div>
+        <div class="new-note-container">
+          <button
+            class="btn add-note-btn"
+            id="addNoteBtn"
+            aria-label="Create a new note"
+            aria-disabled="false"
+          >
+            New Note
+          </button>
+        </div>
+        <div class="search-container">
+          <input
+            type="text"
+            class="search-box"
+            placeholder="Search notes..."
+            id="searchInput"
+            aria-label="Search notes"
+          />
+        </div>
+        <div class="controls" id="filterControls">
+          <button
+            class="btn active"
+            data-filter="all"
+            aria-label="Show all notes"
+          >
+            All Notes
+          </button>
+          <button
+            class="btn"
+            data-filter="recent"
+            aria-label="Show recent notes"
+          >
+            Recent
+          </button>
+        </div>
+        <div class="notes-list" id="notesList" role="list"></div>
+        <div class="empty-state" id="sidebarEmptyState" style="display: none">
+          <h3>No notes found</h3>
+          <p>Create a new note or adjust your search/filters.</p>
+        </div>
+      </div>
+      <div class="main-content" id="mainContent">
+        <div class="editor-area" id="editorArea" style="display: none">
+          <input
+            type="text"
+            id="noteTitle"
+            placeholder="Note title..."
+            aria-label="Note title"
+          />
+          <div id="tinymde-editor"></div>
+          <div id="tinymde_commandbar1"></div>
+          <input
+            type="text"
+            id="noteTags"
+            placeholder="Tags (comma separated)..."
+            aria-label="Note tags"
+          />
+          <div class="editor-buttons">
+            <div class="export-dropdown">
+              <button
+                class="btn export-btn"
+                id="exportNoteBtn"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-label="Export note"
+              >
+                Export Note <span>▼</span>
+              </button>
+              <div class="export-dropdown-content" role="menu">
+                <button id="exportJsonBtn" role="menuitem">
+                  Export as JSON
+                </button>
+                <button id="exportMarkdownBtn" role="menuitem">
+                  Export as Markdown
+                </button>
+              </div>
+            </div>
+            <div class="import-container">
+              <button class="btn" id="importNoteBtn" aria-label="Import note">
+                <i class="fas fa-file-import"></i> Import Note
+              </button>
+              <input type="file" id="importFileInput" accept=".json,.md,.txt" />
+            </div>
+            <button
+              class="btn delete-note-btn"
+              id="deleteNoteBtn"
+              aria-label="Delete note"
+            >
+              Delete Note
+            </button>
+          </div>
+        </div>
+        <div class="empty-state" id="mainEmptyState">
+          <h3>Select a Note or Create New</h3>
+          <p>
+            Choose a note from the sidebar or click "New Note" to get started.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="saving-indicator" id="savingIndicator">
+      <div class="spinner"></div>
+      <span>Saving...</span>
+    </div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
