@@ -7,7 +7,6 @@
     box-sizing: border-box;
 }
 
-
 :root {
     --primary-bg: linear-gradient(135deg, #0a0f14 0%, #1a2332 50%, #0f1419 100%);
     --text-color: #ffffff;
@@ -19,9 +18,9 @@
     --success-color: rgba(34, 197, 94, 0.9);
     --bg-overlay: rgba(255, 255, 255, 0.08);
     --bg-overlay-hover: rgba(255, 255, 255, 0.15);
-    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-color: rgba(0, 0, 0, 0.35);
     --input-bg: rgba(255, 255, 255, 0.08);
-    --panel-bg: rgba(15, 23, 42, 0.95);
+    --panel-bg: rgba(15, 23, 42, 0.97);
 }
 
 [data-theme="light"] {
@@ -37,7 +36,7 @@
     --bg-overlay-hover: rgba(0, 0, 0, 0.12);
     --shadow-color: rgba(0, 0, 0, 0.15);
     --input-bg: rgba(255, 255, 255, 0.95);
-    --panel-bg: rgba(255, 255, 255, 0.9);
+    --panel-bg: rgba(255, 255, 255, 0.92);
 }
 
 body,
@@ -58,25 +57,26 @@ html {
     width: 100vw;
     overflow: hidden;
     padding: 8px 0;
+    gap: 8px;
 }
 
 .sidebar {
     width: 250px;
     background: var(--panel-bg);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px);
     border: 1px solid var(--border-color);
     border-left: none;
     display: flex;
-    padding-right: 10px;
     flex-direction: column;
+    padding-right: 12px;
     height: 100%;
     overflow-y: auto;
     color: var(--text-color);
     border-top-right-radius: 20px;
     border-bottom-right-radius: 20px;
     margin: 8px 12px 8px 0;
-    box-shadow: 2px 0 10px var(--shadow-color);
-    transition: width 0.3s ease;
+    box-shadow: 2px 0 12px var(--shadow-color);
+    transition: width 0.3s ease, box-shadow 0.3s ease;
 }
 
 .sidebar-header {
@@ -89,7 +89,7 @@ html {
 }
 
 .sidebar-title h1 {
-    font-size: 1.8rem;
+    font-size: 1.85rem;
     font-weight: 700;
     background-image: var(--accent-gradient);
     color: transparent;
@@ -103,21 +103,19 @@ html {
 }
 
 .theme-toggle-btn {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--bg-overlay);
     border: 2px solid var(--border-color);
-    border-radius: 6px;
     color: var(--text-color);
     cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    text-align: center;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(12px);
 }
 
 .sidebar-toggle {
@@ -127,36 +125,18 @@ html {
     padding: 6px;
     background: transparent;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text-color);
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: 1rem;
     text-align: center;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.2s, transform 0.2s;
     flex-shrink: 0;
 }
 
-.sidebar.collapsed .sidebar-toggle {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    padding: 6px;
-    margin: 0;
-    width: auto;
-    background: transparent;
-    border: none;
-    min-width: unset;
-    max-width: unset;
-}
-
-.sidebar.collapsed .sidebar-header {
-    justify-content: center;
-    padding: 0.5rem;
-}
-
 .sidebar-toggle:hover {
-    background: rgba(0, 123, 255, 0.2);
-    border-color: var(--accent-color);
+    background: rgba(0, 123, 255, 0.25);
+    transform: translateY(-1px);
 }
 
 .sidebar.collapsed {
@@ -168,8 +148,6 @@ html {
     display: none;
 }
 
-.sidebar.collapsed .settings-container {
-}
 .settings-container {
     position: relative;
     margin-top: auto;
@@ -181,16 +159,15 @@ html {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    background: var(--bg-overlay);
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    background: transparent;
+    border: transparent;
+    border-radius: 10px;
     color: var(--text-color);
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 0.9rem;
-    backdrop-filter: blur(10px);
-    text-align: left;
+    font-size: 0.95rem;
+    backdrop-filter: blur(12px);
 }
 
 .settings-toggle:hover {
@@ -200,8 +177,8 @@ html {
 }
 
 .settings-toggle i {
-    width: 1em;
-    height: 1em;
+    width: 1rem;
+    height: 1rem;
 }
 
 .settings-overlay {
@@ -210,7 +187,7 @@ html {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(4px);
     z-index: 1000;
     opacity: 0;
@@ -231,14 +208,13 @@ html {
     max-width: 80vw;
     height: 100vh;
     background: var(--panel-bg);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px);
     border-right: 1px solid var(--border-color);
-    /* Only round the inward facing corners (top-right, bottom-right) */
     border-radius: 0 20px 20px 0;
-    box-shadow: 4px 0 20px var(--shadow-color);
+    box-shadow: 4px 0 22px var(--shadow-color);
     z-index: 1001;
     transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     padding: 2rem 1.5rem;
     overflow-y: auto;
 }
@@ -289,11 +265,8 @@ html {
 }
 
 .setting-item label {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: var(--text-color);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
 }
 
 .theme-options {
@@ -417,7 +390,7 @@ html {
 
 .add-note-btn:disabled::after {
     content: ' ⏳';
-    font-size: 0.8em;
+    font-size: 0.8rem;
 }
 
 .add-note-btn:not(:disabled):hover {
@@ -513,18 +486,18 @@ html {
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    margin: 8px 8px 8px 0;
+    margin: 8px 0 8px 8px;
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
     box-shadow: -2px 0 10px var(--shadow-color);
     overflow: hidden;
+    padding-right: 0;
 }
 
 .editor-area {
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 1.5rem 1.5rem 1.5rem 0.5rem;
 }
 
 .editor-area input[type="text"] {
@@ -588,11 +561,11 @@ html {
     border: none;
     color: var(--text-color);
     font-family: inherit;
-    font-size: 1.1rem;
-    line-height: 1.7;
+    font-size: 1.15rem;
+    line-height: 1.8;
     flex-grow: 1;
     overflow-y: auto;
-    padding: 1.2rem;
+    padding: 1.3rem;
 }
 
 .TMCommandBar {
@@ -683,7 +656,7 @@ html {
     color: var(--text-color);
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.9em;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -698,7 +671,7 @@ html {
 .export-btn span {
     display: inline-block;
     transition: transform 0.2s ease;
-    font-size: 0.7em;
+    font-size: 0.7rem;
     margin-left: 6px;
     vertical-align: middle;
 }
@@ -732,7 +705,7 @@ html {
 
 .empty-state {
     text-align: center;
-    padding: 4rem 2rem;
+    padding-left: 1rem;
     color: var(--secondary-text);
     flex-grow: 1;
     display: flex;
@@ -843,7 +816,7 @@ html {
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.2s;
-    font-size: 0.85em;
+    font-size: 0.85rem;
     min-width: 70px;
 }
 
@@ -862,33 +835,72 @@ html {
     color: var(--secondary-text);
     min-width: 80px;
     text-align: center;
-    font-size: 0.9em;
+    font-size: 0.9rem;
     padding: 0 8px;
 }
 
 /* Lucide Icon Styling */
+/* Base icon styling */
 lucide-icon,
 i[data-lucide] {
-    width: 0.75em;
-    height: 0.75em;
+    width: 0.8rem;
+    height: 0.8rem;
+    max-width: 0.9rem;
+    max-height: 0.9rem;
     display: inline-block;
     vertical-align: middle;
     stroke: var(--text-color);
+    stroke-width: 1.5;
+    fill: none;
+    transition: all 0.15s ease;
+}
+
+/* Toolbar buttons */
+.toolbar lucide-icon,
+.toolbar i[data-lucide] {
+    width: 0.75rem;
+    height: 0.75rem;
+    max-width: 0.85rem;
+    max-height: 0.85rem;
+    stroke-width: 1.5;
+}
+
+/* Pin buttons */
+.pin-btn lucide-icon,
+.pin-icon {
+    width: 0.7rem;
+    height: 0.7rem;
+    stroke-width: 1.5;
+}
+
+/* Sidebar toggle */
+.sidebar-toggle lucide-icon,
+.sidebar-toggle i[data-lucide] {
+    width: 0.9rem;
+    height: 0.9rem;
     stroke-width: 2;
-    fill: none;
-    color: var(--text-color);
-    transition: all 0.2s ease;
 }
 
-lucide-icon svg,
-i[data-lucide] svg {
-    stroke: var(--text-color);
-    fill: none;
+/* Theme toggle */
+.theme-toggle-btn lucide-icon,
+.theme-toggle-btn i[data-lucide] {
+    width: 0.85rem;
+    height: 0.85rem;
 }
 
-/* Smooth icon animations */
-lucide-icon {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+/* Import/Export buttons */
+.import-container lucide-icon,
+.import-container i[data-lucide],
+.export-btn lucide-icon,
+.export-btn i[data-lucide] {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+/* Hover & active effects */
+.btn:hover lucide-icon,
+.btn:hover i[data-lucide] {
+    transform: scale(1.1);
 }
 
 .btn:active lucide-icon,
@@ -896,135 +908,13 @@ lucide-icon {
     transform: scale(0.95);
 }
 
-/* Loading animation for icons */
-@keyframes icon-pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.7;
-    }
-}
-
-.btn:disabled lucide-icon,
-.btn:disabled i[data-lucide] {
-    animation: icon-pulse 1.5s ease-in-out infinite;
-}
-
-/* Specific icon sizes and styles */
-.sidebar-toggle lucide-icon,
-.sidebar-toggle i[data-lucide] {
-    width: 0.9em;
-    height: 0.9em;
-}
-
-.theme-toggle-btn lucide-icon,
-.theme-toggle-btn i[data-lucide] {
-    width: 1.5em;
-    height: 1.5em;
-}
-
-.pin-btn lucide-icon,
-.pin-icon {
-    width: 0.5em;
-    height: 0.5em;
-    stroke-width: 2.5;
-}
-
-.import-container lucide-icon,
-.import-container i[data-lucide] {
-    width: 0.8em;
-    height: 0.8em;
-    margin-right: 0.3em;
-}
-
-.export-btn lucide-icon,
-.export-btn i[data-lucide] {
-    width: 0.7em;
-    height: 0.7em;
-    margin-left: 0.3em;
-}
-
-/* Icon hover effects */
-.btn:hover lucide-icon,
-.btn:hover i[data-lucide] {
-    stroke: var(--accent-color);
-    transform: scale(1.05);
-}
-
-.theme-toggle-btn:hover lucide-icon,
-.theme-toggle-btn:hover i[data-lucide] {
-    filter: drop-shadow(0 0 4px var(--accent-color));
-}
-
-.pin-btn:hover lucide-icon,
-.pin-btn:hover i[data-lucide] {
-    stroke: #ffd700;
-    filter: drop-shadow(0 0 3px #ffd700);
-}
-
-.pin-btn.pinned lucide-icon,
-.pin-btn.pinned i[data-lucide] {
-    fill: #ffd700;
-    stroke: #ffd700;
-}
-
-/* Note list pin icon styling */
-.note-list-item .pin-icon {
-    margin-left: 0.5em;
-    opacity: 0.8;
-    stroke: #ffd700;
-    fill: #ffd700;
-}
-
-/* Button focus states for accessibility */
-.btn:focus lucide-icon,
-.btn:focus i[data-lucide] {
-    outline: 2px solid var(--accent-color);
-    outline-offset: 2px;
-    border-radius: 2px;
-}
-
-/* Dark theme adjustments */
-[data-theme="light"] lucide-icon,
-[data-theme="light"] i[data-lucide] {
-    stroke: var(--text-color);
-}
-
-[data-theme="light"] .note-list-item .pin-icon {
-    stroke: #b8860b;
-    /* Darker gold for light theme */
-    fill: #b8860b;
-}
-
-[data-theme="light"] .pin-btn.pinned lucide-icon,
-[data-theme="light"] .pin-btn.pinned i[data-lucide] {
-    fill: #b8860b;
-    stroke: #b8860b;
-}
-
-[data-theme="light"] .pin-btn:hover lucide-icon,
-[data-theme="light"] .pin-btn:hover i[data-lucide] {
-    stroke: #b8860b;
-    filter: drop-shadow(0 0 3px #b8860b);
-}
-
-/* Responsive icon sizing */
+/* Responsive icons */
 @media (max-width: 768px) {
 
     lucide-icon,
     i[data-lucide] {
-        width: 0.8em;
-        height: 0.8em;
-    }
-
-    .sidebar-toggle lucide-icon,
-    .sidebar-toggle i[data-lucide] {
-        width: 0.9em;
-        height: 0.9em;
+        width: 0.7rem;
+        height: 0.7rem;
     }
 }
 

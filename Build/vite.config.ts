@@ -43,4 +43,7 @@ export default defineConfig({
     emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
   },
+  server: {
+    allowedHosts: true
+  }
 });

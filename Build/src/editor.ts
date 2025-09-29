@@ -44,6 +44,7 @@ export function initializeTinyMDE(debounceCallback: () => void, attempts: number
         "|",
         "guide",
       ],
+      // Sync back to Markdown on save
       onUpdate: debounceCallback,
     });
     var commandBar1 = new TinyMDE.CommandBar({
