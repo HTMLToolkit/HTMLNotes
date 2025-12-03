@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  build-and-dispatch:
+  send:
     runs-on: ubuntu-latest
     outputs:
       artifact-url: ${{ steps.get-artifact.outputs.url }}
