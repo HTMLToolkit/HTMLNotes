@@ -22,7 +22,7 @@ jobs:
       - name: Checkout source repo
         uses: actions/checkout@v4
         with:
-          ref: v2.2.0
+          ref: v2.0.0
 
       - name: Determine subfolder and zip name
         id: set-zip-name
