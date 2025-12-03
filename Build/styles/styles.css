@@ -839,8 +839,7 @@ html {
     padding: 0 8px;
 }
 
-/* Lucide Icon Styling */
-/* Base icon styling */
+/* Lucide base icon styling */
 lucide-icon,
 i[data-lucide] {
     width: 0.8rem;
