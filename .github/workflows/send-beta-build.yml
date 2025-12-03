@@ -108,10 +108,10 @@ jobs:
             -d '{
               "event_type": "deploy-build",
               "client_payload": {
-                "source_repo": "${{ github.repository }}",
-                "artifact_url": "${{ steps.get-artifact.outputs.url }}",
-                "token": "${{ secrets.GITHUB_TOKEN }}",
-                "subfolder": "${{ steps.set-zip-name.outputs.subfolder }}",
-                "zip_name": "${{ steps.set-zip-name.outputs.zip_name }}"
+                "source_repo": "'${{ github.repository }}'",
+                "artifact_url": "'${ARTIFACT_URL}'",
+                "token": "'${{ secrets.GITHUB_TOKEN }}'",
+                "subfolder": "'${SUBFOLDER}'",
+                "zip_name": "'${ZIP_NAME}'"
               }
             }'
