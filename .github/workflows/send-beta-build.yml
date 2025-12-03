@@ -33,7 +33,7 @@ jobs:
       - name: Determine subfolder and zip name
         id: set-zip-name
         run: |
-          SUBFOLDER="${{ github.event.inputs.subfolder || 'HTMLPlayerBeta' }}"
+          SUBFOLDER="${{ github.event.inputs.subfolder || 'HTMLNotes' }}"
           ZIP_NAME="$(echo "${SUBFOLDER}" | tr '[:upper:]' '[:lower:]')-build.zip"
 
           echo "Subfolder: ${SUBFOLDER}"
