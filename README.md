@@ -1,5 +1,8 @@
 # HTMLNotes
 
+> ## Archived: 10/13/2026
+> This has been superseded by [Penumbra](http://github.com/nisoku/penumbra/) (it's WIP but still)
+
 HTMLNotes is a lightweight, web-based note-taking application built with HTML, CSS, and TypeScript. It leverages TinyMDE for rich Markdown editing and Lucide for a polished, icon-driven interface. Users can create, manage, and organize notes with a clean, intuitive design featuring theme support. Features include a toggleable sidebar, note creation, pinning, categorization, export/import capabilities in JSON and Markdown formats, note deletion, and multiple theme modes.
 
 ## Features
