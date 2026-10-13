@@ -36,8 +36,10 @@ export function addNote(note: Note): Promise<number> {
     const transaction = db.transaction([OBJECT_STORE_NAME], "readwrite");
     const objectStore = transaction.objectStore(OBJECT_STORE_NAME);
     const request = objectStore.add(note);
-    request.onsuccess = () => resolve(request.result as number);
-    request.onerror = () => reject("Error adding note");
+    let key: number;
+    request.onsuccess = () => { key = request.result as number; };
+    transaction.oncomplete = () => resolve(key);
+    transaction.onabort = () => reject(transaction.error || new Error("Error adding note"));
   });
 }
 
@@ -45,9 +47,9 @@ export function updateNote(note: Note): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([OBJECT_STORE_NAME], "readwrite");
     const objectStore = transaction.objectStore(OBJECT_STORE_NAME);
-    const request = objectStore.put(note);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject("Error updating note");
+    objectStore.put(note);
+    transaction.oncomplete = () => resolve();
+    transaction.onabort = () => reject(transaction.error || new Error("Error updating note"));
   });
 }
 
@@ -55,9 +57,9 @@ export function deleteNote(id: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([OBJECT_STORE_NAME], "readwrite");
     const objectStore = transaction.objectStore(OBJECT_STORE_NAME);
-    const request = objectStore.delete(id);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject("Error deleting note");
+    objectStore.delete(id);
+    transaction.oncomplete = () => resolve();
+    transaction.onabort = () => reject(transaction.error || new Error("Error deleting note"));
   });
 }
 

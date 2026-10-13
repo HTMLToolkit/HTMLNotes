@@ -79,13 +79,11 @@ export function renderFilterButtons(): void {
   filterControls.querySelector('[data-filter="all"]')!.classList.add("active");
 }
 
-export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | null = null): void {
-  const notesList = document.getElementById("notesList")!;
-  const sidebarEmptyState = document.getElementById("sidebarEmptyState")!;
+function getFilteredNotes(): Note[] {
   const searchInput = document.getElementById("searchInput") as HTMLInputElement;
 
   const searchTerm = searchInput.value.toLowerCase();
-  let filteredNotes = allNotesCache.filter((note) => {
+  return allNotesCache.filter((note) => {
     const matchesSearch =
       (note.title && note.title.toLowerCase().includes(searchTerm)) ||
       (note.content && note.content.toLowerCase().includes(searchTerm)) ||
@@ -100,7 +98,18 @@ export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | n
       (note.category && note.category.toLowerCase() === currentFilter);
     return matchesSearch && matchesFilter;
   });
+}
 
+export function getTotalPages(): number {
+  return Math.max(1, Math.ceil(getFilteredNotes().length / PAGE_SIZE));
+}
+
+export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | null = null): void {
+  const notesList = document.getElementById("notesList")!;
+  const sidebarEmptyState = document.getElementById("sidebarEmptyState")!;
+  const filteredNotes = getFilteredNotes();
+  const totalPages = Math.max(1, Math.ceil(filteredNotes.length / PAGE_SIZE));
+  currentPage = Math.min(Math.max(1, currentPage), totalPages);
   if (currentFilter !== "recent") {
     filteredNotes.sort((a, b) => {
       // Pinned notes come first
@@ -154,7 +163,6 @@ export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | n
     }
   }
 
-  const totalPages = Math.ceil(filteredNotes.length / PAGE_SIZE);
   renderPagination(totalPages, loadAndRenderCallback);
 }
 
@@ -174,7 +182,7 @@ export function renderPagination(totalPages: number, loadAndRenderCallback: (() 
   prevButton.innerHTML = "← Previous";
   prevButton.setAttribute("aria-label", "Previous page");
   prevButton.addEventListener("click", () =>
-    changePage(currentPage - 1, loadAndRenderCallback)
+    changePage(currentPage - 1, totalPages, loadAndRenderCallback)
   );
 
   const pageInfo = document.createElement("span");
@@ -190,15 +198,15 @@ export function renderPagination(totalPages: number, loadAndRenderCallback: (() 
   nextButton.innerHTML = "Next →";
   nextButton.setAttribute("aria-label", "Next page");
   nextButton.addEventListener("click", () =>
-    changePage(currentPage + 1, loadAndRenderCallback)
+    changePage(currentPage + 1, totalPages, loadAndRenderCallback)
   );
 
   paginationContainer.addEventListener("keydown", (e: KeyboardEvent) => {
     if (e.key === "ArrowLeft" && currentPage > 1) {
-      changePage(currentPage - 1, loadAndRenderCallback);
+      changePage(currentPage - 1, totalPages, loadAndRenderCallback);
       prevButton.focus();
     } else if (e.key === "ArrowRight" && currentPage < (totalPages || 1)) {
-      changePage(currentPage + 1, loadAndRenderCallback);
+      changePage(currentPage + 1, totalPages, loadAndRenderCallback);
       nextButton.focus();
     }
   });
@@ -209,11 +217,12 @@ export function renderPagination(totalPages: number, loadAndRenderCallback: (() 
   notesList.parentNode!.insertBefore(paginationContainer, notesList.nextSibling);
 }
 
-export async function changePage(newPage: number, loadAndRenderCallback: (() => Promise<void>) | null): Promise<void> {
-  if (newPage < 1 || newPage > Math.ceil(allNotesCache.length / PAGE_SIZE))
+export async function changePage(newPage: number, totalPages: number, loadAndRenderCallback: (() => Promise<void>) | null): Promise<void> {
+  if (!Number.isInteger(newPage) || newPage < 1 || newPage > totalPages)
     return;
   currentPage = newPage;
   if (loadAndRenderCallback) await loadAndRenderCallback();
+  else renderNotesList();
   const url = new URL(window.location.href);
   url.searchParams.set("page", newPage.toString());
   window.history.pushState({}, "", url);

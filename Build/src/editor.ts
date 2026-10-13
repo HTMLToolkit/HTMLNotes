@@ -19,61 +19,15 @@ export function initializeTinyMDE(debounceCallback: () => void, attempts: number
   try {
     tinyMdeEditor = new TinyMDE.Editor({
       element: editorContainer,
-      forceSync: true,
-      status: false,
-      spellChecker: false,
-      promptURLs: true,
-      autofocus: true,
-      placeholder: "Start writing your note here...",
-      toolbar: [
-        "bold",
-        "italic",
-        "heading",
-        "|",
-        "quote",
-        "unordered-list",
-        "ordered-list",
-        "|",
-        "link",
-        "image",
-        "table",
-        "|",
-        "preview",
-        "side-by-side",
-        "fullscreen",
-        "|",
-        "guide",
-      ],
-      // Sync back to Markdown on save
-      onUpdate: debounceCallback,
+      content: "",
     });
-    var commandBar1 = new TinyMDE.CommandBar({
+    tinyMdeEditor.addEventListener("change", () => {
+      if (!(window as any).isSettingEditorContent) debounceCallback();
+    });
+    new TinyMDE.CommandBar({
       element: "tinymde_commandbar1",
       editor: tinyMdeEditor,
     });
-
-    const observer = new MutationObserver((mutations: MutationRecord[]) => {
-      if (
-        mutations.some(
-          (m) =>
-            m.type === "childList" ||
-            (m.type === "characterData" &&
-              (m.target as Element).parentElement?.closest(".TinyMDE"))
-        )
-      ) {
-        if (!(window as any).isSettingEditorContent) debounceCallback();
-      }
-    });
-
-    const editorContent = editorContainer.querySelector(".TinyMDE") as Element;
-    if (editorContent) {
-      observer.observe(editorContent, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-      });
-    }
-    (window as any).editorObserver = observer;
   } catch (error) {
     console.error("Error initializing TinyMDE:", error);
     showToast("Error initializing editor.", "error");
@@ -85,9 +39,9 @@ export function setEditorContent(content: string): void {
   try {
     (window as any).isSettingEditorContent = true;
     tinyMdeEditor.setContent(content || "");
-    setTimeout(() => ((window as any).isSettingEditorContent = false), 100);
   } catch (error) {
     console.error("Error setting editor content:", error);
+  } finally {
     (window as any).isSettingEditorContent = false;
   }
 }
@@ -103,70 +57,68 @@ export function enableEditor(): void {
 }
 
 export function focusEditor(): void {
-  if (tinyMdeEditor && tinyMdeEditor.codemirror) {
-    tinyMdeEditor.codemirror.focus();
+  if (tinyMdeEditor) {
+    tinyMdeEditor.setSelection(tinyMdeEditor.getSelection() || { row: 0, col: 0 });
   }
 }
 
-export function createDebounceAutosave(handleSaveNoteCallback: (showNotification: boolean) => Promise<void>): () => void {
+export interface NoteSnapshot {
+  // The shared target gains its generated ID after the first save commits.
+  target: { id: number | null };
+  content: string;
+  title: string;
+  tags: string;
+  category: string;
+}
+
+export function createDebounceAutosave(
+  handleSaveNoteCallback: (showNotification: boolean, snapshot: NoteSnapshot) => Promise<void>,
+  getSnapshot: () => NoteSnapshot,
+): () => void {
   let timeout: number;
-  let lastContent = "";
-  let lastTitle = "";
-  let lastTags = "";
-  let saveQueue: { currentContent: string; currentTitle: string; currentTags: string }[] = [];
+  let lastSnapshot: NoteSnapshot | null = null;
+  let pendingSave: NoteSnapshot | null = null;
   let isSaving = false;
+
+  const processQueue = async () => {
+    if (!pendingSave || isSaving) return;
+    isSaving = true;
+    const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
+    addNoteBtn.disabled = true;
+    addNoteBtn.setAttribute("aria-disabled", "true");
+    showSavingIndicator();
+    try {
+      while (pendingSave) {
+        const snapshot = pendingSave;
+        pendingSave = null;
+        try {
+          await handleSaveNoteCallback(false, snapshot);
+          lastSnapshot = snapshot;
+        } catch (error) {
+          showToast("Error saving note.", "error");
+        }
+      }
+    } finally {
+      hideSavingIndicator();
+      isSaving = false;
+      addNoteBtn.disabled = false;
+      addNoteBtn.setAttribute("aria-disabled", "false");
+    }
+  };
 
   return () => {
     clearTimeout(timeout);
-    const currentContent = getEditorContent();
-    const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
-    const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
-    const currentTitle = noteTitleInput ? noteTitleInput.value.trim() : "";
-    const currentTags = noteTagsInput ? noteTagsInput.value.trim() : "";
-
+    const snapshot = getSnapshot();
     if (
-      currentContent === lastContent &&
-      currentTitle === lastTitle &&
-      currentTags === lastTags
-    )
-      return;
+      !isSaving && !pendingSave && lastSnapshot &&
+      snapshot.target === lastSnapshot.target &&
+      snapshot.content === lastSnapshot.content &&
+      snapshot.title === lastSnapshot.title &&
+      snapshot.tags === lastSnapshot.tags &&
+      snapshot.category === lastSnapshot.category
+    ) return;
 
-    saveQueue.push({ currentContent, currentTitle, currentTags });
-
-    const processQueue = async () => {
-      if (saveQueue.length === 0 || isSaving) return;
-      isSaving = true;
-      const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
-      addNoteBtn.disabled = true;
-      addNoteBtn.setAttribute("aria-disabled", "true");
-      const timeoutId = setTimeout(() => {
-        if (isSaving) {
-          isSaving = false;
-          addNoteBtn.disabled = false;
-          addNoteBtn.setAttribute("aria-disabled", "false");
-          showToast("Autosave timed out.", "error");
-        }
-      }, 5000);
-
-      const { currentContent, currentTitle, currentTags } = saveQueue.shift()!;
-      showSavingIndicator();
-      try {
-        await handleSaveNoteCallback(false);
-        lastContent = currentContent;
-        lastTitle = currentTitle;
-        lastTags = currentTags;
-      } catch (error) {
-        showToast("Error saving note.", "error");
-      } finally {
-        clearTimeout(timeoutId);
-        hideSavingIndicator();
-        isSaving = false;
-        addNoteBtn.disabled = false;
-        addNoteBtn.setAttribute("aria-disabled", "false");
-        if (saveQueue.length > 0) setTimeout(processQueue, 100);
-      }
-    };
-
+    pendingSave = snapshot;
     timeout = setTimeout(processQueue, 1000);
   };
 }

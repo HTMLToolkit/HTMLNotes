@@ -1,10 +1,20 @@
 // notifications.ts - Toast notifications
 
-export function showToast(message: string, type: string = "error", duration: number = 3000): () => void {
+export function showToast(message: string, type: string = "error", duration: number = 3000, action?: { label: string; onClick: () => void }): () => void {
   const toastContainer = document.getElementById("toastContainer")!;
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
-  toast.innerHTML = message;
+  toast.textContent = message;
+  if (action) {
+    const actionButton = document.createElement("button");
+    actionButton.type = "button";
+    actionButton.textContent = action.label;
+    actionButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      action.onClick();
+    });
+    toast.appendChild(actionButton);
+  }
   const closeButton = document.createElement("button");
   closeButton.textContent = "×";
   closeButton.setAttribute("aria-label", "Close");

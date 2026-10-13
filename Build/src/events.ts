@@ -15,6 +15,7 @@ import {
   setCurrentPage,
   renderNotesList,
   changePage,
+  getTotalPages,
 } from "./rendering";
 
 export function setupEventListeners(loadAndRenderCallback: () => Promise<void>): void {
@@ -189,13 +190,16 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
           // Save is handled by autosave, but we can trigger it manually
           (window as any).handleSaveNote();
           break;
-        case "d":
+        case "d": {
+          const target = e.target as HTMLElement;
+          if (target.closest('input, textarea, select, [contenteditable="true"]')) break;
           e.preventDefault();
-          const currentId = (window as any).getCurrentEditingNoteId();
-          if (currentId !== null) {
-            handleDeleteNote(currentId);
+          const currentId = getCurrentEditingNoteId();
+          if (currentId !== null && confirm("Are you sure you want to delete this note?")) {
+            void handleDeleteNote(currentId);
           }
           break;
+        }
         case "f":
           e.preventDefault();
           searchInput.focus();
@@ -209,7 +213,7 @@ export function setupNavigation(loadAndRenderCallback: () => Promise<void>): voi
   window.addEventListener("popstate", () => {
     const urlParams = new URLSearchParams(window.location.search);
     const page = parseInt(urlParams.get("page")!) || 1;
-    changePage(page, loadAndRenderCallback);
+    void changePage(page, getTotalPages(), loadAndRenderCallback);
   });
 }
 

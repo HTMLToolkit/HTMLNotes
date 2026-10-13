@@ -1,12 +1,26 @@
 // utils.ts - Helper utility functions
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 const markdownCache = new Map<string, string>();
+
+function parseStoredDate(dateString: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  if (!match) return new Date(dateString);
+  const [, year, month, day] = match.map(Number);
+  const date = new Date(0);
+  date.setFullYear(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return new Date(NaN);
+  }
+  return date;
+}
 
 export function formatDate(dateString: string): string {
   if (!dateString) return "";
   try {
-    const date = new Date(dateString);
+    const date = parseStoredDate(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -21,12 +35,12 @@ export function formatDate(dateString: string): string {
 
 export function isRecent(dateString: string): boolean {
   try {
-    const noteDate = new Date(dateString);
+    const noteDate = parseStoredDate(dateString);
     if (isNaN(noteDate.getTime())) return false;
     const now = new Date();
-    noteDate.setHours(0, 0, 0, 0);
-    now.setHours(0, 0, 0, 0);
-    const diffDays = Math.floor((now.getTime() - noteDate.getTime()) / (1000 * 60 * 60 * 24));
+    const noteDay = Date.UTC(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate());
+    const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = (today - noteDay) / (1000 * 60 * 60 * 24);
     return diffDays >= 0 && diffDays <= 7;
   } catch (e) {
     return false;
@@ -65,14 +79,14 @@ export function validateTags(tagsInput: string): string[] {
 
 export function renderNotePreview(content: string): string {
   if (!content) return "No content";
-  const key = content.substring(0, 100);
+  const key = content;
   if (!markdownCache.has(key)) {
     const preview = marked.parse(
       escapeHTML(
         content.substring(0, 120) + (content.length > 120 ? "..." : "")
       )
     ) as string;
-    markdownCache.set(key, preview);
+    markdownCache.set(key, DOMPurify.sanitize(preview));
     if (markdownCache.size > 100) {
       const firstKey = markdownCache.keys().next().value;
       if (firstKey) {
