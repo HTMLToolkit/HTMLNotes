@@ -1,31 +1,21 @@
 // main.ts - Application entry point
-const TinyMDE = window.TinyMDE;
-import { marked } from "marked";
+import { refreshIcons } from "./icons";
 
 // Import modules
 import { openDatabase, getAllNotes } from "./database";
-import { showToast, showEmptyState, clearEditor } from "./ui";
+import { showToast, showEmptyState } from "./ui";
 import { initializeTinyMDE, createDebounceAutosave } from "./editor";
 import { setupEventListeners, setupNavigation, setupImport } from "./events";
 import {
-  renderFilterButtons,
   renderNotesList,
-  setCurrentFilter,
   setCurrentPage,
   setAllNotesCache,
-  changePage,
 } from "./rendering";
 import {
   handleSaveNote,
   getNoteSnapshot,
-  handleDeleteNote,
+  setBeforeNoteChange,
   undoDelete,
-  handleExport,
-  handleImport,
-  openEditorForAdd,
-  openEditorForEdit,
-  setCurrentEditingNoteId,
-  getCurrentEditingNoteId,
   setAllNotesCache as setNotesCache,
 } from "./notes";
 
@@ -50,24 +40,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     themeOptions.forEach(option => {
       if (option.dataset.theme === savedTheme) {
         option.classList.add("active");
+        option.setAttribute("aria-pressed", "true");
       } else {
         option.classList.remove("active");
+        option.setAttribute("aria-pressed", "false");
       }
     });
 
     // Initialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-      lucide.createIcons();
-    }
+    refreshIcons();
 
+    setCurrentPage(Math.max(1, Math.trunc(Number(new URLSearchParams(location.search).get("page")) || 1)));
     await openDatabase();
     await loadAndRenderNotes();
     showEmptyState("main");
     const debounceAutosave = createDebounceAutosave(handleSaveNote, getNoteSnapshot);
+    setBeforeNoteChange(async () => {
+      try {
+        await debounceAutosave.flush();
+        return true;
+      } catch {
+        return false;
+      }
+    });
     initializeTinyMDE(debounceAutosave);
-    setupEventListeners(loadAndRenderNotes);
+    setupEventListeners(loadAndRenderNotes, () => {
+      debounceAutosave();
+      void debounceAutosave.flush().catch(() => {});
+    });
     setupImport();
-    setupNavigation(loadAndRenderNotes);
+    setupNavigation();
     // Set up debounce for title and tags
     const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
     const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
@@ -87,7 +89,6 @@ async function loadAndRenderNotes(): Promise<void> {
     allNotesCache.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setAllNotesCache(allNotesCache);
     setNotesCache(allNotesCache);
-    renderFilterButtons();
     renderNotesList(loadAndRenderNotes);
   } catch (error) {
     showToast("Error loading notes.", "error");

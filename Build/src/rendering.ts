@@ -6,6 +6,7 @@ import {
   escapeHTML,
   renderNotePreview,
 } from "./utils";
+import { refreshIcons } from "./icons";
 import { openEditorForEdit, getCurrentEditingNoteId } from "./notes";
 
 let currentFilter = "all";
@@ -51,32 +52,24 @@ export function renderFilterButtons(): void {
     }
   });
 
-  const sortedTags = Array.from(allTags).sort();
-  const sortedCategories = Array.from(allCategories).sort();
   const fragment = document.createDocumentFragment();
-  sortedCategories.forEach((category) => {
-    if (category) {
-      const button = document.createElement("button");
-      button.classList.add("btn");
-      (button as HTMLElement).dataset.filter = category;
-      button.textContent = category.charAt(0).toUpperCase() + category.slice(1);
-      button.setAttribute("aria-label", `Filter by ${category} category`);
-      fragment.appendChild(button);
-    }
+  const filters = new Set([...allCategories, ...allTags]);
+  ["all", "recent", "pinned"].forEach(filter => filters.delete(filter));
+  Array.from(filters).sort().forEach(filter => {
+    if (!filter) return;
+    const button = document.createElement("button");
+    button.classList.add("btn");
+    button.dataset.filter = filter;
+    button.textContent = filter.charAt(0).toUpperCase() + filter.slice(1);
+    button.setAttribute("aria-label", `Filter by ${filter}`);
+    fragment.appendChild(button);
   });
-  sortedTags.forEach((tag) => {
-    if (tag) {
-      const button = document.createElement("button");
-      button.classList.add("btn");
-      (button as HTMLElement).dataset.filter = tag;
-      button.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
-      button.setAttribute("aria-label", `Filter by ${tag} tag`);
-      fragment.appendChild(button);
-    }
-  });
-
   filterControls.appendChild(fragment);
-  filterControls.querySelector('[data-filter="all"]')!.classList.add("active");
+  filterControls.querySelectorAll<HTMLButtonElement>("[data-filter]").forEach(button => {
+    const active = button.dataset.filter === currentFilter;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
 }
 
 function getFilteredNotes(): Note[] {
@@ -107,6 +100,7 @@ export function getTotalPages(): number {
 export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | null = null): void {
   const notesList = document.getElementById("notesList")!;
   const sidebarEmptyState = document.getElementById("sidebarEmptyState")!;
+  renderFilterButtons();
   const filteredNotes = getFilteredNotes();
   const totalPages = Math.max(1, Math.ceil(filteredNotes.length / PAGE_SIZE));
   currentPage = Math.min(Math.max(1, currentPage), totalPages);
@@ -158,9 +152,7 @@ export function renderNotesList(loadAndRenderCallback: (() => Promise<void>) | n
     });
 
     // Re-create Lucide icons after DOM update
-    if (typeof lucide !== 'undefined') {
-      lucide.createIcons();
-    }
+    refreshIcons();
   }
 
   renderPagination(totalPages, loadAndRenderCallback);
@@ -179,7 +171,7 @@ export function renderPagination(totalPages: number, loadAndRenderCallback: (() 
   const prevButton = document.createElement("button");
   prevButton.className = "pagination-btn";
   prevButton.disabled = currentPage === 1;
-  prevButton.innerHTML = "← Previous";
+  prevButton.textContent = "← Prev";
   prevButton.setAttribute("aria-label", "Previous page");
   prevButton.addEventListener("click", () =>
     changePage(currentPage - 1, totalPages, loadAndRenderCallback)
@@ -195,7 +187,7 @@ export function renderPagination(totalPages: number, loadAndRenderCallback: (() 
   const nextButton = document.createElement("button");
   nextButton.className = "pagination-btn";
   nextButton.disabled = currentPage >= (totalPages || 1);
-  nextButton.innerHTML = "Next →";
+  nextButton.textContent = "Next →";
   nextButton.setAttribute("aria-label", "Next page");
   nextButton.addEventListener("click", () =>
     changePage(currentPage + 1, totalPages, loadAndRenderCallback)
@@ -217,7 +209,7 @@ export function renderPagination(totalPages: number, loadAndRenderCallback: (() 
   notesList.parentNode!.insertBefore(paginationContainer, notesList.nextSibling);
 }
 
-export async function changePage(newPage: number, totalPages: number, loadAndRenderCallback: (() => Promise<void>) | null): Promise<void> {
+export async function changePage(newPage: number, totalPages: number, loadAndRenderCallback: (() => Promise<void>) | null, updateHistory: boolean = true): Promise<void> {
   if (!Number.isInteger(newPage) || newPage < 1 || newPage > totalPages)
     return;
   currentPage = newPage;
@@ -225,6 +217,6 @@ export async function changePage(newPage: number, totalPages: number, loadAndRen
   else renderNotesList();
   const url = new URL(window.location.href);
   url.searchParams.set("page", newPage.toString());
-  window.history.pushState({}, "", url);
+  if (updateHistory) window.history.pushState({}, "", url);
   document.querySelector(".notes-list")?.scrollIntoView({ behavior: "smooth" });
 }
