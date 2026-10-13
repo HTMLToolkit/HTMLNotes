@@ -1,6 +1,5 @@
 // events.ts - Event listeners setup
-import { showToast } from "./notifications";
-import { toggleSidebar, clearEditor, showEmptyState } from "./ui";
+import { toggleSidebar, setSidebarCollapsed, clearEditor, showEmptyState } from "./ui";
 import {
   openEditorForAdd,
   openEditorForEdit,
@@ -9,6 +8,7 @@ import {
   handleImport,
   getCurrentEditingNoteId,
   setCurrentEditingNoteId,
+  togglePinNote,
 } from "./notes";
 import {
   setCurrentFilter,
@@ -18,7 +18,7 @@ import {
   getTotalPages,
 } from "./rendering";
 
-export function setupEventListeners(loadAndRenderCallback: () => Promise<void>): void {
+export function setupEventListeners(loadAndRenderCallback: () => Promise<void>, requestSave: () => void): void {
   const filterControls = document.getElementById("filterControls")!;
   const searchInput = document.getElementById("searchInput") as HTMLInputElement;
   const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
@@ -26,8 +26,6 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
   const exportJsonBtn = document.getElementById("exportJsonBtn") as HTMLElement;
   const exportMarkdownBtn = document.getElementById("exportMarkdownBtn") as HTMLElement;
   const exportNoteBtn = document.getElementById("exportNoteBtn") as HTMLElement;
-  const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
-  const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
   const notesList = document.getElementById("notesList")!;
   const settingsToggle = document.getElementById("settingsToggle") as HTMLButtonElement;
   const settingsOverlay = document.getElementById("settingsOverlay") as HTMLElement;
@@ -37,8 +35,8 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
   const pinNoteBtn = document.getElementById("pinNoteBtn") as HTMLButtonElement;
 
   filterControls.addEventListener("click", (e: Event) => {
-    const target = e.target as HTMLButtonElement;
-    if (target.classList.contains("btn") && !target.disabled) {
+    const target = (e.target as Element).closest<HTMLButtonElement>("[data-filter]");
+    if (target && !target.disabled) {
       filterControls
         .querySelectorAll(".btn")
         .forEach((b) => b.classList.remove("active"));
@@ -55,20 +53,31 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
     renderNotesList(loadAndRenderCallback);
   });
   
-  settingsToggle.addEventListener("click", () => {
-    settingsOverlay.classList.add("active");
-    settingsPanel.classList.add("active");
+  const setSettingsOpen = (open: boolean) => {
+    settingsOverlay.classList.toggle("active", open);
+    settingsPanel.classList.toggle("active", open);
+    settingsToggle.setAttribute("aria-expanded", String(open));
+    (document.querySelector(".sidebar") as HTMLElement).inert = open;
+    (document.getElementById("mainContent") as HTMLElement).inert = open;
+    requestAnimationFrame(() => (open ? settingsClose : settingsToggle).focus({ preventScroll: true }));
+  };
+  settingsToggle.addEventListener("click", () => setSettingsOpen(true));
+  settingsClose.addEventListener("click", () => setSettingsOpen(false));
+  settingsOverlay.addEventListener("click", (event: Event) => {
+    if (event.target === settingsOverlay) setSettingsOpen(false);
   });
-
-  settingsClose.addEventListener("click", () => {
-    settingsOverlay.classList.remove("active");
-    settingsPanel.classList.remove("active");
-  });
-
-  settingsOverlay.addEventListener("click", (e: Event) => {
-    if (e.target === settingsOverlay) {
-      settingsOverlay.classList.remove("active");
-      settingsPanel.classList.remove("active");
+  settingsPanel.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setSettingsOpen(false);
+    } else if (event.key === "Tab") {
+      const buttons = settingsPanel.querySelectorAll<HTMLButtonElement>("button");
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first.focus();
+      }
     }
   });
 
@@ -86,13 +95,13 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
       localStorage.setItem("theme", selectedTheme);
       
       // Update active state
-      themeOptions.forEach(opt => opt.classList.remove("active"));
+      themeOptions.forEach(opt => {
+        opt.classList.remove("active");
+        opt.setAttribute("aria-pressed", "false");
+      });
       option.classList.add("active");
+      option.setAttribute("aria-pressed", "true");
       
-      // Re-create icons after theme change
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-      }
     });
   });
 
@@ -102,21 +111,18 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
     if (savedTheme === "auto") {
       const actualTheme = e.matches ? "dark" : "light";
       document.documentElement.setAttribute("data-theme", actualTheme);
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-      }
     }
   });
 
   pinNoteBtn.addEventListener("click", () => {
-    const currentEditingNoteId = (window as any).getCurrentEditingNoteId();
+    const currentEditingNoteId = getCurrentEditingNoteId();
     if (currentEditingNoteId !== null) {
-      // Toggle pin status - this will be handled in notes.ts
-      (window as any).togglePinNote(currentEditingNoteId);
+      void togglePinNote(currentEditingNoteId);
     }
   });
 
   addNoteBtn.addEventListener("click", openEditorForAdd);
+  document.getElementById("emptyAddNoteBtn")!.addEventListener("click", () => addNoteBtn.click());
 
   deleteNoteBtn.addEventListener("click", async () => {
     const currentEditingNoteId = getCurrentEditingNoteId();
@@ -125,36 +131,45 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
       confirm("Are you sure you want to delete this note?")
     ) {
       await handleDeleteNote(currentEditingNoteId);
-    } else {
+    } else if (currentEditingNoteId === null) {
       clearEditor();
       setCurrentEditingNoteId(null);
       showEmptyState("main");
     }
   });
 
-  exportJsonBtn.addEventListener("click", () => handleExport("json"));
-  exportMarkdownBtn.addEventListener("click", () => handleExport("md"));
-
-  document.addEventListener("click", (e: Event) => {
-    const target = e.target as Element;
-    if (!target.closest(".export-dropdown")) {
-      document
-        .querySelectorAll(".export-dropdown-content")
-        .forEach((d) => (d as HTMLElement).style.display = "none");
+  const dropdown = document.getElementById("exportMenu")!;
+  const closeExportMenu = () => {
+    dropdown.classList.remove("open");
+    exportNoteBtn.setAttribute("aria-expanded", "false");
+  };
+  exportJsonBtn.addEventListener("click", () => { closeExportMenu(); void handleExport("json"); });
+  exportMarkdownBtn.addEventListener("click", () => { closeExportMenu(); void handleExport("md"); });
+  document.addEventListener("click", (event: Event) => {
+    if (!(event.target as Element).closest(".export-dropdown")) closeExportMenu();
+  });
+  exportNoteBtn.addEventListener("click", () => {
+    const open = !dropdown.classList.contains("open");
+    dropdown.classList.toggle("open", open);
+    exportNoteBtn.setAttribute("aria-expanded", String(open));
+    if (open) {
+      dropdown.style.right = "0";
+      const bounds = dropdown.getBoundingClientRect();
+      if (bounds.left < 8) dropdown.style.right = `${bounds.left - 8}px`;
+      else if (bounds.right > window.innerWidth - 8) {
+        dropdown.style.right = `${bounds.right - window.innerWidth + 8}px`;
+      }
+      exportJsonBtn.focus();
     }
   });
-
-  exportNoteBtn.addEventListener("click", (e: Event) => {
-    const event = e as MouseEvent;
-    event.stopPropagation();
-    const target = event.currentTarget as HTMLElement;
-    const dropdown = target.nextElementSibling as HTMLElement;
-    const isExpanded = dropdown.style.display === "block";
-    document
-      .querySelectorAll(".export-dropdown-content")
-      .forEach((d) => (d as HTMLElement).style.display = "none");
-    dropdown.style.display = isExpanded ? "none" : "block";
-    exportNoteBtn.setAttribute("aria-expanded", isExpanded ? "false" : "true");
+  window.addEventListener("resize", closeExportMenu);
+  dropdown.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      event.preventDefault(); closeExportMenu(); exportNoteBtn.focus();
+    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      (document.activeElement === exportJsonBtn ? exportMarkdownBtn : exportJsonBtn).focus();
+    }
   });
 
   // Note: debounceAutosave is set up in main
@@ -179,6 +194,7 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
 
   // Keyboard shortcuts
   document.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (settingsOverlay.classList.contains("active")) return;
     if (e.ctrlKey || e.metaKey) {
       switch (e.key.toLowerCase()) {
         case "n":
@@ -188,7 +204,7 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
         case "s":
           e.preventDefault();
           // Save is handled by autosave, but we can trigger it manually
-          (window as any).handleSaveNote();
+          if (document.getElementById("editorArea")!.style.display !== "none") requestSave();
           break;
         case "d": {
           const target = e.target as HTMLElement;
@@ -202,6 +218,7 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
         }
         case "f":
           e.preventDefault();
+          setSidebarCollapsed(false);
           searchInput.focus();
           break;
       }
@@ -209,11 +226,12 @@ export function setupEventListeners(loadAndRenderCallback: () => Promise<void>):
   });
 }
 
-export function setupNavigation(loadAndRenderCallback: () => Promise<void>): void {
+export function setupNavigation(): void {
   window.addEventListener("popstate", () => {
     const urlParams = new URLSearchParams(window.location.search);
     const page = parseInt(urlParams.get("page")!) || 1;
-    void changePage(page, getTotalPages(), loadAndRenderCallback);
+    const totalPages = getTotalPages();
+    void changePage(Math.min(Math.max(1, page), totalPages), totalPages, null, false);
   });
 }
 
@@ -222,5 +240,9 @@ export function setupImport(): void {
   const fileInput = document.getElementById("importFileInput") as HTMLInputElement;
   if (!importBtn || !fileInput) return;
   importBtn.addEventListener("click", () => fileInput.click());
-  fileInput.addEventListener("change", handleImport);
+  document.getElementById("emptyImportBtn")!.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", async event => {
+    const id = await handleImport(event);
+    if (id !== undefined) await openEditorForEdit(id);
+  });
 }

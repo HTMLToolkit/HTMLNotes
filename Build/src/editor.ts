@@ -1,9 +1,9 @@
 // editor.ts - TinyMDE editor functions
-const TinyMDE = window.TinyMDE;
+import { Editor, CommandBar } from "tiny-markdown-editor";
 import { showToast } from "./notifications.js";
 import { showSavingIndicator, hideSavingIndicator } from "./ui.js";
 
-let tinyMdeEditor: any = null;
+let tinyMdeEditor: Editor | null = null;
 
 export function initializeTinyMDE(debounceCallback: () => void, attempts: number = 3): void {
   const editorContainer = document.getElementById("tinymde-editor") as HTMLElement;
@@ -17,14 +17,17 @@ export function initializeTinyMDE(debounceCallback: () => void, attempts: number
   }
 
   try {
-    tinyMdeEditor = new TinyMDE.Editor({
+    tinyMdeEditor = new Editor({
       element: editorContainer,
       content: "",
     });
+    tinyMdeEditor.e?.setAttribute("role", "textbox");
+    tinyMdeEditor.e?.setAttribute("aria-label", "Note content");
+    tinyMdeEditor.e?.setAttribute("aria-multiline", "true");
     tinyMdeEditor.addEventListener("change", () => {
       if (!(window as any).isSettingEditorContent) debounceCallback();
     });
-    new TinyMDE.CommandBar({
+    new CommandBar({
       element: "tinymde_commandbar1",
       editor: tinyMdeEditor,
     });
@@ -51,20 +54,19 @@ export function getEditorContent(): string {
 }
 
 export function enableEditor(): void {
-  if (tinyMdeEditor && typeof tinyMdeEditor.enable === "function") {
-    tinyMdeEditor.enable();
-  }
+  if (tinyMdeEditor?.e) tinyMdeEditor.e.contentEditable = "true";
 }
 
 export function focusEditor(): void {
   if (tinyMdeEditor) {
+    tinyMdeEditor.e?.focus({ preventScroll: true });
     tinyMdeEditor.setSelection(tinyMdeEditor.getSelection() || { row: 0, col: 0 });
   }
 }
 
 export interface NoteSnapshot {
   // The shared target gains its generated ID after the first save commits.
-  target: { id: number | null };
+  target: { id: number | null; deleted?: boolean };
   content: string;
   title: string;
   tags: string;
@@ -74,15 +76,19 @@ export interface NoteSnapshot {
 export function createDebounceAutosave(
   handleSaveNoteCallback: (showNotification: boolean, snapshot: NoteSnapshot) => Promise<void>,
   getSnapshot: () => NoteSnapshot,
-): () => void {
+): (() => void) & { flush: () => Promise<void> } {
   let timeout: number;
   let lastSnapshot: NoteSnapshot | null = null;
   let pendingSave: NoteSnapshot | null = null;
   let isSaving = false;
+  let activeSave: Promise<void> | null = null;
+  let saveFailed = false;
+  let saveError: unknown;
 
-  const processQueue = async () => {
+  const runQueue = async () => {
     if (!pendingSave || isSaving) return;
     isSaving = true;
+    saveFailed = false;
     const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
     addNoteBtn.disabled = true;
     addNoteBtn.setAttribute("aria-disabled", "true");
@@ -95,7 +101,11 @@ export function createDebounceAutosave(
           await handleSaveNoteCallback(false, snapshot);
           lastSnapshot = snapshot;
         } catch (error) {
+          saveFailed = true;
+          saveError = error;
+          pendingSave ??= snapshot;
           showToast("Error saving note.", "error");
+          break;
         }
       }
     } finally {
@@ -106,7 +116,16 @@ export function createDebounceAutosave(
     }
   };
 
-  return () => {
+  const processQueue = () => {
+    if (activeSave) return activeSave;
+    activeSave = runQueue().then(
+      () => { activeSave = null; },
+      error => { activeSave = null; throw error; },
+    );
+    return activeSave;
+  };
+
+  const debounceAutosave = () => {
     clearTimeout(timeout);
     const snapshot = getSnapshot();
     if (
@@ -121,4 +140,11 @@ export function createDebounceAutosave(
     pendingSave = snapshot;
     timeout = setTimeout(processQueue, 1000);
   };
+  return Object.assign(debounceAutosave, {
+    flush: async () => {
+      clearTimeout(timeout);
+      await processQueue();
+      if (saveFailed) throw saveError;
+    },
+  });
 }

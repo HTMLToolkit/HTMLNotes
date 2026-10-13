@@ -8,7 +8,7 @@ import {
   getNoteById as dbGetNoteById,
 } from "./database";
 import { showToast } from "./notifications";
-import { showEditor, clearEditor, scrollToActiveNote, updatePinButton } from "./ui";
+import { showEditor, clearEditor, scrollToActiveNote, updatePinButton, showEmptyState } from "./ui";
 import {
   setEditorContent,
   getEditorContent,
@@ -19,10 +19,15 @@ import {
 import { validateTags, inferCategory } from "./utils";
 import { setAllNotesCache as setRenderingNotesCache, renderNotesList } from "./rendering";
 
-let currentNoteTarget: { id: number | null } = { id: null };
+let currentNoteTarget: NoteSnapshot["target"] = { id: null };
 let lastDeletedNote: Note | undefined = undefined;
 let untitledNoteCount = 0;
 let allNotesCache: Note[] = [];
+let beforeNoteChange: () => Promise<boolean> = async () => true;
+
+export function setBeforeNoteChange(callback: () => Promise<boolean>): void {
+  beforeNoteChange = callback;
+}
 
 export function setCurrentEditingNoteId(id: number | null): void {
   currentNoteTarget = { id };
@@ -51,6 +56,7 @@ export function getNoteSnapshot(): NoteSnapshot {
 }
 
 export async function handleSaveNote(showNotification: boolean = true, snapshot: NoteSnapshot = getNoteSnapshot()): Promise<void> {
+  if (snapshot.target.deleted) return;
   const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
   if (showNotification) addNoteBtn.disabled = true;
   const isNewNote = snapshot.target.id === null;
@@ -79,8 +85,8 @@ export async function handleSaveNote(showNotification: boolean = true, snapshot:
       snapshot.target.id = newId;
       if (showNotification) showToast("Note created.", "success");
       if (snapshot.target === currentNoteTarget) {
-        document.getElementById("deleteNoteBtn")!.style.display = "inline-block";
-        document.getElementById("exportNoteBtn")!.style.display = "inline-block";
+        document.getElementById("deleteNoteBtn")!.style.display = "inline-flex";
+        document.getElementById("exportNoteBtn")!.style.display = "inline-flex";
       }
     }
     if (isNewNote) {
@@ -90,6 +96,7 @@ export async function handleSaveNote(showNotification: boolean = true, snapshot:
       const index = allNotesCache.findIndex(n => n.id === note.id);
       if (index !== -1) allNotesCache[index] = { ...note };
     }
+    if (snapshot.target === currentNoteTarget) updatePinButton(note.pinned || false);
     setRenderingNotesCache(allNotesCache);
     renderNotesList();
   } catch (error) {
@@ -101,6 +108,9 @@ export async function handleSaveNote(showNotification: boolean = true, snapshot:
 }
 
 export async function handleDeleteNote(id: number): Promise<void> {
+  if (!(await beforeNoteChange())) return;
+  const target = currentNoteTarget.id === id ? currentNoteTarget : null;
+  if (target) target.deleted = true;
   try {
     lastDeletedNote = await dbGetNoteById(id);
     await dbDeleteNote(id);
@@ -110,7 +120,7 @@ export async function handleDeleteNote(id: number): Promise<void> {
     renderNotesList();
     clearEditor();
     setCurrentEditingNoteId(null);
-    // showEmptyState("main") from ui
+    showEmptyState("main");
     const undoToast = showToast(
       "Note deleted.",
       "success",
@@ -119,6 +129,7 @@ export async function handleDeleteNote(id: number): Promise<void> {
     );
     (window as any).currentUndoToast = undoToast;
   } catch (error) {
+    if (target) target.deleted = false;
     showToast("Error deleting note.", "error");
   }
 }
@@ -137,7 +148,8 @@ export async function undoDelete(): Promise<number | undefined> {
       allNotesCache.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setRenderingNotesCache(allNotesCache);
       renderNotesList();
-      // openEditorForEdit(newId) from main
+      lastDeletedNote = undefined;
+      await openEditorForEdit(newId);
       showToast("Note restored.", "success");
       return newId;
     } catch (error) {
@@ -147,6 +159,7 @@ export async function undoDelete(): Promise<number | undefined> {
 }
 
 export async function handleExport(format: string = "json"): Promise<void> {
+  if (!(await beforeNoteChange())) return;
   if (currentNoteTarget.id === null) {
     showToast("No note selected to export.", "error");
     return;
@@ -215,15 +228,19 @@ export async function handleImport(event: Event): Promise<number | undefined> {
     let note: Note;
     if (file.name.endsWith(".json")) {
       const parsed = JSON.parse(text);
-      if (!parsed.content || typeof parsed.content !== "string") {
+      if (!parsed || typeof parsed.content !== "string") {
         throw new Error("Invalid JSON format: content is required");
       }
+      const tags = validateTags(Array.isArray(parsed.tags)
+        ? parsed.tags.filter((tag: unknown): tag is string => typeof tag === "string").join(",")
+        : "");
       note = {
-        title: parsed.title || file.name.replace(".json", ""),
+        title: (typeof parsed.title === "string" && parsed.title.trim()
+          ? parsed.title.trim() : file.name.replace(".json", "")).substring(0, 100),
         content: parsed.content,
-        tags: Array.isArray(parsed.tags) ? parsed.tags : [],
-        date: parsed.date || new Date().toISOString().split("T")[0],
-        category: parsed.category || inferCategory(parsed.tags || []),
+        tags,
+        date: typeof parsed.date === "string" ? parsed.date : new Date().toISOString().split("T")[0],
+        category: typeof parsed.category === "string" ? parsed.category : inferCategory(tags),
       };
     } else {
       const lines = text.split("\n");
@@ -257,6 +274,7 @@ export async function handleImport(event: Event): Promise<number | undefined> {
 }
 
 export async function openEditorForAdd(): Promise<void> {
+  if (!(await beforeNoteChange())) return;
   setCurrentEditingNoteId(null);
   clearEditor();
   showEditor();
@@ -278,6 +296,7 @@ export async function openEditorForAdd(): Promise<void> {
 }
 
 export async function togglePinNote(id: number): Promise<void> {
+  if (!(await beforeNoteChange())) return;
   try {
     const note = await dbGetNoteById(id);
     if (!note) {
@@ -301,6 +320,7 @@ export async function togglePinNote(id: number): Promise<void> {
 }
 
 export async function openEditorForEdit(id: number): Promise<void> {
+  if (!(await beforeNoteChange())) return;
   try {
     const note = await dbGetNoteById(id);
     if (!note) {
@@ -322,8 +342,8 @@ export async function openEditorForEdit(id: number): Promise<void> {
     updatePinButton(note.pinned || false);
     setEditorContent(note.content || "");
     enableEditor();
-    deleteNoteBtn.style.display = "inline-block";
-    exportNoteBtn.style.display = "inline-block";
+    deleteNoteBtn.style.display = "inline-flex";
+    exportNoteBtn.style.display = "inline-flex";
     notesList.querySelectorAll(".note-list-item").forEach((item) => {
       item.classList.toggle("active", parseInt((item as HTMLElement).dataset.id!) === id);
     });

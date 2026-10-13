@@ -1,15 +1,20 @@
 // ui.ts - UI manipulation functions
 import { showToast } from './notifications';
+import { refreshIcons } from './icons';
+import { setEditorContent } from './editor';
 
 export { showToast };
 
-export function updatePinButton(isPinned: boolean): void {
+export function updatePinButton(isPinned: boolean, canPin: boolean = true): void {
   const pinNoteBtn = document.getElementById("pinNoteBtn") as HTMLButtonElement;
 
   // Clear existing content and create new icon element
   pinNoteBtn.innerHTML = '';
   const iconElement = document.createElement('i');
-  iconElement.setAttribute('data-lucide', 'pin');
+  iconElement.setAttribute('data-lucide', isPinned ? 'pin-off' : 'pin');
+  pinNoteBtn.disabled = !canPin;
+  pinNoteBtn.setAttribute('aria-pressed', String(isPinned));
+  pinNoteBtn.setAttribute('aria-label', isPinned ? 'Unpin note' : 'Pin note');
 
   if (isPinned) {
     pinNoteBtn.appendChild(iconElement);
@@ -22,9 +27,7 @@ export function updatePinButton(isPinned: boolean): void {
   }
 
   // Re-create icons after DOM change
-  if (typeof lucide !== 'undefined') {
-    lucide.createIcons();
-  }
+  refreshIcons();
 }
 
 export function showSavingIndicator(): void {
@@ -55,6 +58,7 @@ export function showEditor(): void {
   const editorArea = document.getElementById("editorArea")!;
   mainEmptyState.style.display = "none";
   editorArea.style.display = "flex";
+  if (window.matchMedia("(max-width: 768px)").matches) setSidebarCollapsed(true);
 }
 
 export function clearEditor(): void {
@@ -68,8 +72,8 @@ export function clearEditor(): void {
   noteTitleInput.value = "";
   noteTagsInput.value = "";
   noteCategorySelect.value = "";
-  updatePinButton(false);
-  // Note: tinyMdeEditor is handled in editor
+  updatePinButton(false, false);
+  setEditorContent("");
   deleteNoteBtn.style.display = "none";
   exportNoteBtn.style.display = "none";
   notesList
@@ -88,6 +92,13 @@ export function scrollToActiveNote(): void {
   }
 }
 
+export function setSidebarCollapsed(collapsed: boolean): void {
+  document.querySelector(".sidebar")!.classList.toggle("collapsed", collapsed);
+  const toggle = document.querySelector(".sidebar-toggle")!;
+  toggle.setAttribute("aria-expanded", String(!collapsed));
+  toggle.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+}
+
 export function toggleSidebar(): void {
-  document.querySelector(".sidebar")!.classList.toggle("collapsed");
+  setSidebarCollapsed(!document.querySelector(".sidebar")!.classList.contains("collapsed"));
 }
