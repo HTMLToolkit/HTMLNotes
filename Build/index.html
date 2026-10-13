@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTMLNotes</title>
+    <link rel="stylesheet" href="./styles/styles.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <aside class="sidebar" id="sidebar" aria-label="Notes sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title">
+            <h1>HTMLNotes</h1>
+          </div>
+          <button class="sidebar-toggle" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="sidebar">
+            <i data-lucide="menu"></i>
+          </button>
+        </div>
+        <div class="new-note-container">
+          <button
+            class="btn add-note-btn"
+            id="addNoteBtn"
+            aria-label="Create a new note"
+            aria-disabled="false"
+          >
+            <i data-lucide="plus"></i> <span>New Note</span>
+          </button>
+        </div>
+        <div class="search-container">
+          <i data-lucide="search"></i>
+          <input
+            type="text"
+            class="search-box"
+            placeholder="Search notes..."
+            id="searchInput"
+            aria-label="Search notes"
+          />
+        </div>
+        <div class="controls" id="filterControls">
+          <button
+            class="btn active"
+            data-filter="all"
+            aria-label="Show all notes"
+          >
+            All Notes
+          </button>
+          <button
+            class="btn"
+            data-filter="recent"
+            aria-label="Show recent notes"
+          >
+            Recent
+          </button>
+          <button
+            class="btn"
+            data-filter="pinned"
+            aria-label="Show pinned notes"
+          >
+            Pinned
+          </button>
+        </div>
+        <div class="notes-list" id="notesList" role="list"></div>
+        <div class="empty-state" id="sidebarEmptyState" style="display: none">
+          <h3>No notes found</h3>
+          <p>Create a new note or adjust your search/filters.</p>
+        </div>
+        <div class="settings-container">
+          <button class="settings-toggle" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel">
+            <i data-lucide="settings"></i>
+            <span>Settings</span>
+          </button>
+        </div>
+      </aside>
+      <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-panel" id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+          <div class="settings-header">
+            <h2 class="settings-title" id="settingsTitle">Settings</h2>
+            <button class="settings-close" id="settingsClose" aria-label="Close settings">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <div class="settings-content">
+            <div class="setting-item">
+              <label>Theme:</label>
+              <div class="theme-options">
+                <button class="theme-option" data-theme="light">
+                  <i data-lucide="sun"></i>
+                  Light
+                </button>
+                <button class="theme-option" data-theme="dark">
+                  <i data-lucide="moon"></i>
+                  Dark
+                </button>
+                <button class="theme-option" data-theme="auto">
+                  <i data-lucide="monitor"></i>
+                  Auto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <main class="main-content" id="mainContent">
+        <div class="editor-area" id="editorArea" style="display: none">
+          <input
+            type="text"
+            id="noteTitle"
+            placeholder="Note title..."
+            aria-label="Note title"
+          />
+          <div id="tinymde_commandbar1" role="toolbar" aria-label="Markdown formatting"></div>
+          <div id="tinymde-editor"></div>
+          <input
+            type="text"
+            id="noteTags"
+            placeholder="Tags (comma separated)..."
+            aria-label="Note tags"
+          />
+          <select id="noteCategory" aria-label="Note category">
+            <option value="">Select category...</option>
+            <option value="personal">Personal</option>
+            <option value="work">Work</option>
+            <option value="ideas">Ideas</option>
+            <option value="todo">To Do</option>
+            <option value="learning">Learning</option>
+          </select>
+          <div class="editor-buttons">
+            <div class="pin-container">
+              <button class="btn pin-btn" id="pinNoteBtn" aria-label="Pin note" aria-pressed="false" disabled>
+                <i data-lucide="pin"></i> Pin Note
+              </button>
+            </div>
+            <div class="export-dropdown">
+              <button
+                class="btn export-btn"
+                id="exportNoteBtn"
+                aria-haspopup="menu"
+                aria-controls="exportMenu"
+                aria-expanded="false"
+                aria-label="Export note"
+              >
+                <i data-lucide="download"></i> <span>Export</span> <i data-lucide="chevron-down"></i>
+              </button>
+              <div class="export-dropdown-content" id="exportMenu" role="menu">
+                <button id="exportJsonBtn" role="menuitem">
+                  Export as JSON
+                </button>
+                <button id="exportMarkdownBtn" role="menuitem">
+                  Export as Markdown
+                </button>
+              </div>
+            </div>
+            <div class="import-container">
+              <button class="btn" id="importNoteBtn" aria-label="Import note">
+                <i data-lucide="upload"></i> Import Note
+              </button>
+              <input type="file" id="importFileInput" accept=".json,.md,.txt" />
+            </div>
+            <button
+              class="btn delete-note-btn"
+              id="deleteNoteBtn"
+              aria-label="Delete note"
+            >
+              <i data-lucide="trash-2"></i> <span>Delete Note</span>
+            </button>
+          </div>
+        </div>
+        <div class="empty-state" id="mainEmptyState">
+          <i data-lucide="file-text" class="empty-state-icon"></i>
+          <h3>Your notes, all in one place</h3>
+          <p>
+            Choose a note from the sidebar, start a new one, or import a file.
+          </p>
+          <div class="empty-state-actions">
+            <button class="btn add-note-btn" id="emptyAddNoteBtn"><i data-lucide="plus"></i> New Note</button>
+            <button class="btn" id="emptyImportBtn"><i data-lucide="upload"></i> Import Note</button>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="saving-indicator" id="savingIndicator" role="status" aria-live="polite">
+      <div class="spinner"></div>
+      <span>Saving...</span>
+    </div>
+    <div id="toastContainer" class="toast-container" role="status" aria-live="polite"></div>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
