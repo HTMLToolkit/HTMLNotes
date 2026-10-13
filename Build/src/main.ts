@@ -17,6 +17,7 @@ import {
 } from "./rendering";
 import {
   handleSaveNote,
+  getNoteSnapshot,
   handleDeleteNote,
   undoDelete,
   handleExport,
@@ -62,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await openDatabase();
     await loadAndRenderNotes();
     showEmptyState("main");
-    const debounceAutosave = createDebounceAutosave(handleSaveNote);
+    const debounceAutosave = createDebounceAutosave(handleSaveNote, getNoteSnapshot);
     initializeTinyMDE(debounceAutosave);
     setupEventListeners(loadAndRenderNotes);
     setupImport();

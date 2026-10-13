@@ -14,21 +14,22 @@ import {
   getEditorContent,
   enableEditor,
   focusEditor,
+  type NoteSnapshot,
 } from "./editor";
 import { validateTags, inferCategory } from "./utils";
 import { setAllNotesCache as setRenderingNotesCache, renderNotesList } from "./rendering";
 
-let currentEditingNoteId: number | null = null;
+let currentNoteTarget: { id: number | null } = { id: null };
 let lastDeletedNote: Note | undefined = undefined;
 let untitledNoteCount = 0;
 let allNotesCache: Note[] = [];
 
 export function setCurrentEditingNoteId(id: number | null): void {
-  currentEditingNoteId = id;
+  currentNoteTarget = { id };
 }
 
 export function getCurrentEditingNoteId(): number | null {
-  return currentEditingNoteId;
+  return currentNoteTarget.id;
 }
 
 export function setAllNotesCache(notes: Note[]): void {
@@ -39,47 +40,55 @@ export function getAllNotesCache(): Note[] {
   return allNotesCache;
 }
 
-export async function handleSaveNote(showNotification: boolean = true): Promise<void> {
-  const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
-  const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
-  const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
-  const noteCategorySelect = document.getElementById("noteCategory") as HTMLSelectElement;
-  const deleteNoteBtn = document.getElementById("deleteNoteBtn") as HTMLElement;
-  const exportNoteBtn = document.getElementById("exportNoteBtn") as HTMLElement;
-  const notesList = document.getElementById("notesList") as HTMLElement;
+export function getNoteSnapshot(): NoteSnapshot {
+  return {
+    target: currentNoteTarget,
+    title: (document.getElementById("noteTitle") as HTMLInputElement).value.trim(),
+    content: getEditorContent(),
+    tags: (document.getElementById("noteTags") as HTMLInputElement).value.trim(),
+    category: (document.getElementById("noteCategory") as HTMLSelectElement).value,
+  };
+}
 
-  addNoteBtn.disabled = true;
-  const title =
-    noteTitleInput.value.trim() || `Untitled ${untitledNoteCount++}`;
-  const content = getEditorContent();
-  const tagsInput = noteTagsInput.value.trim();
-  const tags = validateTags(tagsInput);
-  const category = noteCategorySelect.value || inferCategory(tags);
+export async function handleSaveNote(showNotification: boolean = true, snapshot: NoteSnapshot = getNoteSnapshot()): Promise<void> {
+  const addNoteBtn = document.getElementById("addNoteBtn") as HTMLButtonElement;
+  if (showNotification) addNoteBtn.disabled = true;
+  const isNewNote = snapshot.target.id === null;
+  const existingNote = allNotesCache.find(note => note.id === snapshot.target.id);
+  const title = snapshot.title || `Untitled ${untitledNoteCount++}`;
+  const tags = validateTags(snapshot.tags);
+  const category = snapshot.category || inferCategory(tags);
   const currentDate = new Date().toISOString().split("T")[0];
-  const note: Note = { title, content, tags, date: currentDate, category };
+  const note: Note = {
+    title,
+    content: snapshot.content,
+    tags,
+    date: existingNote?.date ?? currentDate,
+    pinned: existingNote?.pinned ?? false,
+    category,
+  };
 
   try {
-    if (currentEditingNoteId !== null) {
-      note.id = currentEditingNoteId;
+    if (!isNewNote) {
+      note.id = snapshot.target.id!;
       await dbUpdateNote(note);
       if (showNotification) showToast("Note updated.", "success");
     } else {
       const newId = await dbAddNote(note);
       note.id = newId;
-      currentEditingNoteId = newId;
+      snapshot.target.id = newId;
       if (showNotification) showToast("Note created.", "success");
-      deleteNoteBtn.style.display = "inline-block";
-      exportNoteBtn.style.display = "inline-block";
-    }
-    // Update cache and re-render
-    if (currentEditingNoteId !== null) {
-      const index = allNotesCache.findIndex(n => n.id === currentEditingNoteId);
-      if (index !== -1) {
-        allNotesCache[index] = { ...note };
+      if (snapshot.target === currentNoteTarget) {
+        document.getElementById("deleteNoteBtn")!.style.display = "inline-block";
+        document.getElementById("exportNoteBtn")!.style.display = "inline-block";
       }
-    } else {
+    }
+    if (isNewNote) {
       allNotesCache.push(note);
       allNotesCache.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } else {
+      const index = allNotesCache.findIndex(n => n.id === note.id);
+      if (index !== -1) allNotesCache[index] = { ...note };
     }
     setRenderingNotesCache(allNotesCache);
     renderNotesList();
@@ -87,7 +96,7 @@ export async function handleSaveNote(showNotification: boolean = true): Promise<
     showToast("Error saving note.", "error");
     throw error;
   } finally {
-    addNoteBtn.disabled = false;
+    if (showNotification) addNoteBtn.disabled = false;
   }
 }
 
@@ -103,9 +112,10 @@ export async function handleDeleteNote(id: number): Promise<void> {
     setCurrentEditingNoteId(null);
     // showEmptyState("main") from ui
     const undoToast = showToast(
-      'Note deleted. <button onclick="event.stopPropagation(); undoDelete()">Undo</button>',
+      "Note deleted.",
       "success",
-      10000
+      10000,
+      { label: "Undo", onClick: () => { void undoDelete(); } }
     );
     (window as any).currentUndoToast = undoToast;
   } catch (error) {
@@ -137,12 +147,12 @@ export async function undoDelete(): Promise<number | undefined> {
 }
 
 export async function handleExport(format: string = "json"): Promise<void> {
-  if (currentEditingNoteId === null) {
+  if (currentNoteTarget.id === null) {
     showToast("No note selected to export.", "error");
     return;
   }
   try {
-    const note = await dbGetNoteById(currentEditingNoteId);
+    const note = await dbGetNoteById(currentNoteTarget.id);
     if (!note) {
       showToast("Note not found.", "error");
       return;
@@ -200,48 +210,50 @@ export async function handleImport(event: Event): Promise<number | undefined> {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async (e: ProgressEvent<FileReader>) => {
-    try {
-      let note: Note;
-      if (file.name.endsWith(".json")) {
-        const parsed = JSON.parse(e.target!.result as string);
-        if (!parsed.content || typeof parsed.content !== "string") {
-          throw new Error("Invalid JSON format: content is required");
-        }
-        note = {
-          title: parsed.title || file.name.replace(".json", ""),
-          content: parsed.content,
-          tags: Array.isArray(parsed.tags) ? parsed.tags : [],
-          date: parsed.date || new Date().toISOString().split("T")[0],
-          category: parsed.category || inferCategory(parsed.tags || []),
-        };
-      } else {
-        const lines = (e.target!.result as string).split("\n");
-        let title = file.name.replace(/\.[^/.]+$/, "");
-        let contentStart = 0;
-        if (lines[0]?.startsWith("# ")) {
-          title = lines[0].substring(2).trim();
-          contentStart = 1;
-        }
-        note = {
-          title: title.substring(0, 100),
-          content: lines.slice(contentStart).join("\n").trim(),
-          tags: [],
-          date: new Date().toISOString().split("T")[0],
-          category: "personal",
-        };
+  try {
+    const text = await file.text();
+    let note: Note;
+    if (file.name.endsWith(".json")) {
+      const parsed = JSON.parse(text);
+      if (!parsed.content || typeof parsed.content !== "string") {
+        throw new Error("Invalid JSON format: content is required");
       }
-      const newId = await dbAddNote(note);
-      // openEditorForEdit(newId) from main
-      showToast("Note imported successfully!", "success");
-      return newId;
-    } catch (error) {
-      showToast(`Error importing note: ${(error as Error).message}`, "error");
+      note = {
+        title: parsed.title || file.name.replace(".json", ""),
+        content: parsed.content,
+        tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+        date: parsed.date || new Date().toISOString().split("T")[0],
+        category: parsed.category || inferCategory(parsed.tags || []),
+      };
+    } else {
+      const lines = text.split("\n");
+      let title = file.name.replace(/\.[^/.]+$/, "");
+      let contentStart = 0;
+      if (lines[0]?.startsWith("# ")) {
+        title = lines[0].substring(2).trim();
+        contentStart = 1;
+      }
+      note = {
+        title: title.substring(0, 100),
+        content: lines.slice(contentStart).join("\n").trim(),
+        tags: [],
+        date: new Date().toISOString().split("T")[0],
+        category: "personal",
+      };
     }
+    const newId = await dbAddNote(note);
+    note.id = newId;
+    allNotesCache.push(note);
+    allNotesCache.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    setRenderingNotesCache(allNotesCache);
+    renderNotesList();
+    showToast("Note imported successfully!", "success");
+    return newId;
+  } catch (error) {
+    showToast(`Error importing note: ${(error as Error).message}`, "error");
+  } finally {
     target.value = "";
-  };
-  reader.readAsText(file);
+  }
 }
 
 export async function openEditorForAdd(): Promise<void> {
@@ -295,7 +307,7 @@ export async function openEditorForEdit(id: number): Promise<void> {
       showToast("Note not found.", "error");
       return;
     }
-    currentEditingNoteId = id;
+    setCurrentEditingNoteId(id);
     showEditor();
     const noteTitleInput = document.getElementById("noteTitle") as HTMLInputElement;
     const noteTagsInput = document.getElementById("noteTags") as HTMLInputElement;
